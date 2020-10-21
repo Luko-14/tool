@@ -1,4 +1,5 @@
 import requests
+import csv
 
 
 def get_data():
@@ -29,8 +30,17 @@ def get_data():
             if line != "" and line[0] != "#":
                 data = line.split(",")
                 # delete white spaces from data
-                for i in range(len(data)):
+                for i in range(0, len(data) - 1):
                     data[i] = data[i].split(" ")[-1]
+                    if i == 1:
+                        list_date = list(data[i])
+                        datum = [
+                            "".join(list_date[0:4]),
+                            "".join(list_date[4:6]),
+                            "".join(list_date[6:8]),
+                        ]
+                        data[i] = "-".join(datum)
+
                 # write data to file
                 f.writelines("\n")
                 f.writelines(",".join(data))
