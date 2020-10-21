@@ -1,11 +1,12 @@
 import requests
 
+
 def get_data():
     # Request data from KNMI
     # Parameters: station and begin date
     url = "http://projects.knmi.nl/klimatologie/daggegevens/getdata_dag.cgi"
     station = 290
-    from_date = "1-1-2016"  # in format d-m-y
+    from_date = "1-1-2017"  # in format d-m-y
     date = from_date.split("-")
     PARAMS = {
         "stns": station,
