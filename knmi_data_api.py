@@ -29,7 +29,7 @@ def get_data():
             if line != "" and line[0] != "#":
                 data = line.split(",")
                 # delete white spaces from data
-                for i in range(0, len(data) - 1):
+                for i in range(0, len(data)):
                     data[i] = data[i].split(" ")[-1]
                     if i == 1:
                         list_date = list(data[i])
