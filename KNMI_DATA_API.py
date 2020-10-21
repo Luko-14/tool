@@ -1,15 +1,14 @@
 import requests
-import csv
 
-
+# collecting and formating data from knmi
 def get_data():
     # Request data from KNMI
     # Parameters: station and begin date
     url = "http://projects.knmi.nl/klimatologie/daggegevens/getdata_dag.cgi"
     station = 290
-    from_date = "1-1-2014"  # in format d-m-y
+    from_date = "1-1-2018"  # in format d-m-y
     date = from_date.split("-")
-    PARAMS = {
+    params = {
         "stns": station,
         "vars": "TG:FG",
         "byear": date[2],
@@ -17,11 +16,11 @@ def get_data():
         "bday": date[0],
     }
 
-    resp = requests.post(url, data=PARAMS)
+    resp = requests.post(url, data=params)
     # create / open new csv file
-    with open("KNMI_DATA.csv", "w") as f:
+    with open("KNMI_DATA.csv", "w") as data_file:
         # write headers
-        f.writelines("Station,Date,Temp_mean,Wind_mean")
+        data_file.writelines("Station,Date,Temp_mean,Wind_mean")
         # split text in list of lines
         lines = resp.text.split("\r\n")
         # split each line in list of data
@@ -42,8 +41,8 @@ def get_data():
                         data[i] = "-".join(datum)
 
                 # write data to file
-                f.writelines("\n")
-                f.writelines(",".join(data))
+                data_file.writelines("\n")
+                data_file.writelines(",".join(data))
     return 0
 
 
