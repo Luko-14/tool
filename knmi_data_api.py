@@ -6,7 +6,7 @@ def get_data():
     # Parameters: station and begin date
     url = "http://projects.knmi.nl/klimatologie/daggegevens/getdata_dag.cgi"
     station = 290
-    from_date = "1-1-2018"  # in format d-m-y
+    from_date = "1-1-2017"  # in format d-m-y
     date = from_date.split("-")
     params = {
         "stns": station,
@@ -31,6 +31,7 @@ def get_data():
                 # delete white spaces from data
                 for i in range(0, len(data)):
                     data[i] = data[i].split(" ")[-1]
+                    # format date form yyyymmmdd to yyyy-mm-dd
                     if i == 1:
                         list_date = list(data[i])
                         datum = [
