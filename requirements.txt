@@ -1,3 +1,5 @@
 python
     requests
     pandas
+    os
+    numpy
