@@ -3,6 +3,4 @@ for i in range(100):
     i += 1
 
 
-print('Hello, world!')
-
-
+print("Hello, world!")

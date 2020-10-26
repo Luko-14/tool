@@ -1,4 +1,3 @@
-.vscode/*
+.vscode
 *.code-workspace
-knmi_data.csv
-KNMI_DATA.csv
+data

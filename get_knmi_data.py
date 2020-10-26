@@ -18,7 +18,7 @@ def get_data():
 
     resp = requests.post(url, data=params)
     # create / open new csv file
-    with open("knmi_data.csv", "w") as data_file:
+    with open("./data/knmi_data.csv", "w") as data_file:
         # write headers
         data_file.writelines("Station,Date,Temp_mean,Wind_mean")
         # split text in list of lines

@@ -1,0 +1,2 @@
+map met afbeeldingen / grafieken
+dit bestand is er zodat er een git file ontstaat
