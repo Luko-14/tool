@@ -1,3 +1,4 @@
 .vscode
 *.code-workspace
 data
+__pycache__

@@ -67,26 +67,27 @@ def df_filt_dates(df, date, RANGE, stop_date):
 
     sim_dates = df.loc[filt]
     sim_dates = sim_dates[:stop_date]
+    # return list with comparable dates
     return sim_dates.index.values
 
 
 # comparing dates
-def compare_dates():
-    get_data()
+def compare_dates(RANGE, seq):
+    # get_data()
 
-    # y-m-d
-    BEGIN_DATE = pd.to_datetime("2020-8-1")
+    # y-m-d first date of aurum data
+    BEGIN_DATE = np.datetime64(pd.to_datetime("2020-8-1"))
 
     comp_date_seq = {}
 
+    # open csv
     df = pd.read_csv("./data/knmi_data.csv", parse_dates=["Date"], index_col="Date")
 
     LAST_DATE = df.index[-1]
 
-    RANGE = 10
-
     date = BEGIN_DATE
-
+    # search comparable dates for each date after begin_date
+    # untill current date
     while True:
         longest_sequence = 0
 
@@ -94,22 +95,28 @@ def compare_dates():
 
         for check_date in list_sim_dates:
             i = 0
+            # checks if there are sequences of comparable temperature
             while True:
                 i += 1
 
+                # get data from next day
                 new_date = date + np.timedelta64(i, "D")
                 new_check_date = check_date + np.timedelta64(i, "D")
 
+                # check if next date is not current date (KNMI data not present)
                 if new_date > (pd.to_datetime("today") - np.timedelta64(1, "D")):
                     break
 
+                # get temperature of next dates
                 new_temp = df.loc[new_date]["Temp_mean"]
                 new_check_temp = df.loc[new_check_date]["Temp_mean"]
 
+                # check if temperature is in range
                 if not (
                     new_check_temp <= (new_temp + RANGE)
                     and new_check_temp >= (new_temp - RANGE)
                 ):
+                    # if new sequence is longest sequence, save date
                     if i > longest_sequence:
                         longest_sequence = i - 1
                         sim_date = check_date
@@ -118,7 +125,8 @@ def compare_dates():
 
                     break
 
-        if longest_sequence >= 3:
+        # add longest sequence to dict, if its longer than seq
+        if longest_sequence >= seq:
             if not longest_sequence in comp_date_seq.keys():
                 comp_date_seq[longest_sequence] = [
                     ((date, end_date), (sim_date, sim_end_date))
@@ -128,6 +136,7 @@ def compare_dates():
                     ((date, end_date), (sim_date, sim_end_date))
                 )
 
+        # set date to new date
         date = end_date + np.timedelta64(2, "D")
 
         if len(list_sim_dates) == 0:
@@ -136,9 +145,23 @@ def compare_dates():
         if date > LAST_DATE:
             break
 
+    # returns the dict with sequences
     return comp_date_seq
 
 
 if __name__ == "__main__":
-    outp = compare_dates()
-    print(outp)
+    compare_dates(5, 3)
+    # x = 0
+    # i = 1
+    # while x < 250:
+    #     x = 0
+    #     dicto = compare_dates(i, 3)
+
+    #     for h, j in dicto.items():
+    #         x += h * len(j)
+
+    #     print("bij een range van {} heb je {} verg dagen".format(i, x))
+
+    #     i += 1
+
+    # print(i)
