@@ -132,14 +132,22 @@ def compare_dates(df, RANGE, seq):
                 if not (
                     new_check_temp <= (new_temp + RANGE)
                     and new_check_temp >= (new_temp - RANGE)
-                    and new_temp != 0
                 ):
+
+                    # go back untill end end_temp an positive int is
+                    j = 1
+                    end_date = new_date - np.timedelta64(j, "D")
+                    end_temp = df.loc[end_date]["weight_degr_days"]
+                    while end_temp == 0:
+                        j += 1
+                        end_date = new_date - np.timedelta64(j, "D")
+                        end_temp = df.loc[end_date]["weight_degr_days"]
+
                     # if new sequence is longest sequence, save date
-                    if i > longest_sequence:
-                        longest_sequence = i - 1
+                    if (i - j) > longest_sequence:
+                        longest_sequence = i - j - 1
                         sim_date = check_date
                         sim_end_date = sim_date + np.timedelta64(longest_sequence, "D")
-                        end_date = date + np.timedelta64(longest_sequence, "D")
 
                     break
 
@@ -158,7 +166,7 @@ def compare_dates(df, RANGE, seq):
         if len(list_sim_dates) == 0:
             date = date + np.timedelta64(1, "D")
         else:
-            date = end_date + np.timedelta64(2, "D")
+            date = new_date
 
         if date > LAST_DATE:
             break
