@@ -28,7 +28,7 @@ def get_data():
     # create / open new csv file
     with open("./data/knmi_data.csv", "w") as data_file:
         # write headers
-        data_file.writelines("Station,Date,Temp_mean,Wind_mean")
+        data_file.writelines("Station,Date,Temp_mean,Wind_mean,weight_degr_days")
         # split text in list of lines
         lines = resp.text.split("\r\n")
         # split each line in list of data
@@ -47,7 +47,23 @@ def get_data():
                             "".join(list_date[4:6]),
                             "".join(list_date[6:8]),
                         ]
+                        month = int(datum[1])
                         data[i] = "-".join(datum)
+
+                temp = int(data[2])
+
+                # calculate weighted degree days
+                if temp >= 155:
+                    weight_degr_days = 0
+                elif month == 3 or month == 10:
+                    weight_degr_days = 180 - temp
+                elif month >= 4 and month <= 9:
+                    weight_degr_days = (180 - temp) * 0.8
+                else:
+                    weight_degr_days = (180 - temp) * 1.1
+
+                # add weighted degree days to data
+                data.append(str(round(weight_degr_days)))
 
                 # write data to file
                 data_file.writelines("\n")
@@ -57,10 +73,13 @@ def get_data():
 
 # searches similar dates
 def df_filt_dates(df, date, RANGE, stop_date):
-    date_temp = df.loc[date]["Temp_mean"]
+    date_temp = df.loc[date]["weight_degr_days"]
 
-    filt = (df["Temp_mean"] <= (date_temp + RANGE)) & (
-        df["Temp_mean"] >= (date_temp - RANGE)
+    if date_temp == 0:
+        return []
+
+    filt = (df["weight_degr_days"] <= (date_temp + RANGE)) & (
+        df["weight_degr_days"] >= (date_temp - RANGE)
     )
 
     stop_date = stop_date - np.timedelta64(1, "D")
@@ -72,16 +91,14 @@ def df_filt_dates(df, date, RANGE, stop_date):
 
 
 # comparing dates
-def compare_dates(RANGE, seq):
-    # get_data()
+def compare_dates(df, RANGE, seq):
+
+    get_data()
 
     # y-m-d first date of aurum data
     BEGIN_DATE = np.datetime64(pd.to_datetime("2020-8-1"))
 
     comp_date_seq = {}
-
-    # open csv
-    df = pd.read_csv("./data/knmi_data.csv", parse_dates=["Date"], index_col="Date")
 
     LAST_DATE = df.index[-1]
 
@@ -108,13 +125,14 @@ def compare_dates(RANGE, seq):
                     break
 
                 # get temperature of next dates
-                new_temp = df.loc[new_date]["Temp_mean"]
-                new_check_temp = df.loc[new_check_date]["Temp_mean"]
+                new_temp = df.loc[new_date]["weight_degr_days"]
+                new_check_temp = df.loc[new_check_date]["weight_degr_days"]
 
                 # check if temperature is in range
                 if not (
                     new_check_temp <= (new_temp + RANGE)
                     and new_check_temp >= (new_temp - RANGE)
+                    and new_temp != 0
                 ):
                     # if new sequence is longest sequence, save date
                     if i > longest_sequence:
@@ -137,10 +155,10 @@ def compare_dates(RANGE, seq):
                 )
 
         # set date to new date
-        date = end_date + np.timedelta64(2, "D")
-
         if len(list_sim_dates) == 0:
             date = date + np.timedelta64(1, "D")
+        else:
+            date = end_date + np.timedelta64(2, "D")
 
         if date > LAST_DATE:
             break
@@ -149,8 +167,13 @@ def compare_dates(RANGE, seq):
     return comp_date_seq
 
 
-if __name__ == "__main__":
-    compare_dates(5, 3)
+def main():
+
+    get_data()
+    # open csv
+    df = pd.read_csv("./data/knmi_data.csv", parse_dates=["Date"], index_col="Date")
+    return compare_dates(df, 5, 3)
+
     # x = 0
     # i = 1
     # while x < 250:
@@ -165,3 +188,7 @@ if __name__ == "__main__":
     #     i += 1
 
     # print(i)
+
+
+if __name__ == "__main__":
+    main()
