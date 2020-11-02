@@ -93,8 +93,6 @@ def df_filt_dates(df, date, RANGE, stop_date):
 # comparing dates
 def compare_dates(df, RANGE, seq):
 
-    get_data()
-
     # y-m-d first date of aurum data
     BEGIN_DATE = np.datetime64(pd.to_datetime("2020-8-1"))
 
@@ -178,12 +176,62 @@ def compare_dates(df, RANGE, seq):
     return comp_date_seq
 
 
+def get_seq_weighted_dates(df, seq):
+
+    # y-m-d first date of aurum data
+    BEGIN_DATE = np.datetime64(pd.to_datetime("2020-8-1"))
+
+    comp_date_seq = {}
+
+    filt = df["weight_degr_days"] == 0
+
+    df1 = df.loc[filt]
+    df1 = df1[BEGIN_DATE:]
+
+    i = 0
+
+    while True:
+        longest_sequence = 0
+        j = 1
+
+        while True:
+            if df1.index[i + j] > df1.index[-1]:
+                break
+
+            next_date = df1.index[i] + np.timedelta64(j, "D")
+            check_date = df1.index[i + j]
+
+            if next_date == check_date:
+                j += 1
+            else:
+                if j > longest_sequence:
+                    longest_sequence = j - 1
+                    date = df1.index[i]
+                    end_date = df1.index[i + longest_sequence]
+
+                i += j
+                break
+
+        # add longest sequence to dict, if its longer than seq
+        if (longest_sequence + 1) >= seq:
+            if not (longest_sequence + 1) in comp_date_seq.keys():
+                comp_date_seq[(longest_sequence + 1)] = [(date, end_date)]
+            else:
+                comp_date_seq[(longest_sequence + 1)].append((date, end_date))
+
+        if df1.index[i] == df1.index[-1]:
+            break
+
+    return comp_date_seq
+
+
 def main():
 
-    get_data()
+    # get_data()
+
     # open csv
     df = pd.read_csv("./data/knmi_data.csv", parse_dates=["Date"], index_col="Date")
-    dates = compare_dates(df, 5, 3)
+    dates = get_seq_weighted_dates(df, 4)
     print(dates)
     return dates
 
