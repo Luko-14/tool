@@ -122,7 +122,7 @@ def compare_dates(df, RANGE, seq):
 
                 # check if next date is not current date (KNMI data not present)
                 if new_date > (pd.to_datetime("today") - np.timedelta64(1, "D")):
-                    break
+                    return comp_date_seq
 
                 # get temperature of next dates
                 new_temp = df.loc[new_date]["weight_degr_days"]
@@ -134,18 +134,21 @@ def compare_dates(df, RANGE, seq):
                     and new_check_temp >= (new_temp - RANGE)
                 ):
 
-                    # go back untill end end_temp an positive int is
-                    j = 1
-                    end_date = new_date - np.timedelta64(j, "D")
-                    end_temp = df.loc[end_date]["weight_degr_days"]
-                    while end_temp == 0:
-                        j += 1
-                        end_date = new_date - np.timedelta64(j, "D")
-                        end_temp = df.loc[end_date]["weight_degr_days"]
+                    set_date = new_date + np.timedelta64(1, "D")
+
+                    # check if new weighted temp is not 0
+                    while True:
+                        i -= 1
+                        new_date = date + np.timedelta64(i, "D")
+                        new_temp = df.loc[new_date]["weight_degr_days"]
+                        if new_temp != 0:
+                            i += 1
+                            break
 
                     # if new sequence is longest sequence, save date
-                    if (i - j) > longest_sequence:
-                        longest_sequence = i - j - 1
+                    if i > longest_sequence:
+                        longest_sequence = i - 1
+                        end_date = date + np.timedelta64(longest_sequence, "D")
                         sim_date = check_date
                         sim_end_date = sim_date + np.timedelta64(longest_sequence, "D")
 
@@ -166,7 +169,7 @@ def compare_dates(df, RANGE, seq):
         if len(list_sim_dates) == 0:
             date = date + np.timedelta64(1, "D")
         else:
-            date = new_date
+            date = set_date
 
         if date > LAST_DATE:
             break
@@ -180,7 +183,9 @@ def main():
     get_data()
     # open csv
     df = pd.read_csv("./data/knmi_data.csv", parse_dates=["Date"], index_col="Date")
-    return compare_dates(df, 5, 3)
+    dates = compare_dates(df, 5, 3)
+    print(dates)
+    return dates
 
     # x = 0
     # i = 1
