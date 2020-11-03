@@ -153,13 +153,13 @@ def compare_dates(df, RANGE, seq):
                     break
 
         # add longest sequence to dict, if its longer than seq
-        if longest_sequence >= seq:
-            if not longest_sequence in comp_date_seq.keys():
-                comp_date_seq[longest_sequence] = [
+        if (longest_sequence + 1) >= seq:
+            if not (longest_sequence + 1) in comp_date_seq.keys():
+                comp_date_seq[(longest_sequence + 1)] = [
                     ((date, end_date), (sim_date, sim_end_date))
                 ]
             else:
-                comp_date_seq[longest_sequence].append(
+                comp_date_seq[(longest_sequence + 1)].append(
                     ((date, end_date), (sim_date, sim_end_date))
                 )
 
@@ -227,12 +227,14 @@ def get_seq_weighted_dates(df, seq):
 
 def main():
 
-    # get_data()
+    get_data()
 
     # open csv
     df = pd.read_csv("./data/knmi_data.csv", parse_dates=["Date"], index_col="Date")
+    seq = compare_dates(df, 5, 3)
     dates = get_seq_weighted_dates(df, 4)
     print(dates)
+    print(seq)
     return dates
 
     # x = 0
