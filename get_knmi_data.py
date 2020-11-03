@@ -91,7 +91,9 @@ def df_filt_dates(df, date, RANGE, stop_date):
 
 
 # comparing dates
-def compare_dates(df, RANGE, seq):
+def compare_dates(RANGE, seq):
+
+    df = pd.read_csv("./data/knmi_data.csv", parse_dates=["Date"], index_col="Date")
 
     # y-m-d first date of aurum data
     BEGIN_DATE = np.datetime64(pd.to_datetime("2020-8-1"))
@@ -176,7 +178,9 @@ def compare_dates(df, RANGE, seq):
     return comp_date_seq
 
 
-def get_seq_weighted_dates(df, seq):
+def get_seq_weighted_dates(seq):
+
+    df = pd.read_csv("./data/knmi_data.csv", parse_dates=["Date"], index_col="Date")
 
     # y-m-d first date of aurum data
     BEGIN_DATE = np.datetime64(pd.to_datetime("2020-8-1"))
@@ -230,9 +234,8 @@ def main():
     get_data()
 
     # open csv
-    df = pd.read_csv("./data/knmi_data.csv", parse_dates=["Date"], index_col="Date")
-    seq = compare_dates(df, 5, 3)
-    dates = get_seq_weighted_dates(df, 4)
+    seq = compare_dates(5, 3)
+    dates = get_seq_weighted_dates(4)
     print(dates)
     print(seq)
     return dates
