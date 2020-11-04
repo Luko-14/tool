@@ -91,9 +91,7 @@ def df_filt_dates(df, date, RANGE, stop_date):
 
 
 # comparing dates
-def compare_dates(RANGE, seq):
-
-    df = pd.read_csv("./data/knmi_data.csv", parse_dates=["Date"], index_col="Date")
+def compare_dates(RANGE, seq, df):
 
     # y-m-d first date of aurum data
     BEGIN_DATE = np.datetime64(pd.to_datetime("2020-8-1"))
@@ -178,9 +176,8 @@ def compare_dates(RANGE, seq):
     return comp_date_seq
 
 
-def get_seq_weighted_dates(seq):
-
-    df = pd.read_csv("./data/knmi_data.csv", parse_dates=["Date"], index_col="Date")
+# get dict of a sequence of non weighted dates
+def get_seq_weighted_dates(seq, df):
 
     # y-m-d first date of aurum data
     BEGIN_DATE = np.datetime64(pd.to_datetime("2020-8-1"))
@@ -229,13 +226,16 @@ def get_seq_weighted_dates(seq):
     return comp_date_seq
 
 
+# for testing / debugging
 def main():
 
     get_data()
 
     # open csv
-    seq = compare_dates(5, 3)
-    dates = get_seq_weighted_dates(4)
+    df = pd.read_csv("./data/knmi_data.csv", parse_dates=["Date"], index_col="Date")
+
+    seq = compare_dates(5, 3, df)
+    dates = get_seq_weighted_dates(4, df)
     print(dates)
     print(seq)
     return dates
@@ -256,5 +256,6 @@ def main():
     # print(i)
 
 
+# run main program if the file is executed
 if __name__ == "__main__":
     main()
