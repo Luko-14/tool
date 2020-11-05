@@ -42,12 +42,12 @@ def average_use(df, dates):
     tot_usg = 0
     days = 0
     # sum all gas usage from comp dates
-    for key, ls in dates.items():
+    for _, ls in dates.items():
         for items in ls:
             df1 = df.loc[items[0] : items[1]]["Measurement value"]
             if not df1.empty:
                 tot_usg += df1.sum()
-                days += key
+                days += df1.index.size
 
     # return the average usage per day
     if days != 0:
@@ -58,7 +58,7 @@ def average_use(df, dates):
 
 # calcualte the old usage
 def calc_old_usage(df, old_seq, days):
-    return 1500 / 365 * days
+    return 0
 
 
 # calculates the gas usage for heating
@@ -69,14 +69,19 @@ def gas_reduction(df, dates, av_use):
 
     av_ls = []
 
-    for key, ls in dates.items():
+    for _, ls in dates.items():
         for items in ls:
             new_seq = items[0]
             old_seq = items[1]
             df1 = df.loc[new_seq[0] : new_seq[1]]["Measurement value"]
             if not df1.empty:
-                new_usage = df1.sum() - key * av_use
-                old_usage = calc_old_usage(df, old_seq, key) - key * av_use
+                days = df1.index.size
+                new_usage = df1.sum() - days * av_use
+                old_usage = (
+                    calc_old_usage(df, old_seq, days)
+                    + days * av_use / 0.3
+                    - days * av_use
+                )
 
                 if new_usage > 0 and old_usage > 0:
                     av_ls.append(new_usage / old_usage)
