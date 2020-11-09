@@ -47,7 +47,7 @@ def average_use(df, dates):
             df1 = df.loc[items[0] : items[1]]["Measurement value"]
             if not df1.empty:
                 tot_usg += df1.sum()
-                days += df1.index.size
+                days += df1.index.size / 24
 
     # return the average usage per day
     if days != 0:
@@ -75,11 +75,11 @@ def gas_reduction(df, dates, av_use):
             old_seq = items[1]
             df1 = df.loc[new_seq[0] : new_seq[1]]["Measurement value"]
             if not df1.empty:
-                days = df1.index.size
+                days = df1.index.size / 24
                 new_usage = df1.sum() - days * av_use
                 old_usage = (
                     calc_old_usage(df, old_seq, days)
-                    + days * av_use / 0.3
+                    + days * av_use / 0.24
                     - days * av_use
                 )
 
