@@ -64,29 +64,41 @@ def calc_old_usage(df, old_seq, days):
 # calculates the gas usage for heating
 def gas_reduction(df, dates, av_use):
 
+    # checks if there is data for average use
     if av_use == None:
         return None
 
+    # crates list for average use
     av_ls = []
 
+    # go through each item in dict compare dates (from get_knmi_data)
     for _, ls in dates.items():
         for items in ls:
+            # breaks tuple down in new and old sequence
             new_seq = items[0]
             old_seq = items[1]
+            # creates dataframe for gas consumption for days in new_seq
             df1 = df.loc[new_seq[0] : new_seq[1]]["Measurement value"]
-            if not df1.empty:
-                days = df1.index.size / 24
-                new_usage = df1.sum() - days * av_use
-                old_usage = (
-                    calc_old_usage(df, old_seq, days)
-                    + days * av_use / 0.24
-                    - days * av_use
-                )
 
-                if new_usage > 0 and old_usage > 0:
-                    av_ls.append(new_usage / old_usage)
+            # checks if dataframe is not empty
+            if df1.empty:
+                continue
 
+            # calculates the number of days
+            days = df1.index.size / 24
+
+            # calculates the gas use for heating
+            new_usage = df1.sum() - days * av_use
+            old_usage = calc_old_usage(df, old_seq, days) - days * av_use
+
+            # checks if gas use is positive
+            if new_usage > 0 and old_usage > 0:
+                # add gas reduction to list
+                av_ls.append(new_usage / old_usage)
+
+    # checks if list is not empty
     if av_ls:
+        # returns average gas reduction
         return sum(av_ls) / len(av_ls)
     else:
         return None

@@ -73,6 +73,7 @@ def run_analysis():
     for i in range(df_results.index.size):
 
         Serial_number = df_results["Serial_number"][i]
+
         # filter df for serial number
         df_snr = tool.filter_df(df_aurum, Serial_number)
 
@@ -85,17 +86,20 @@ def run_analysis():
         gas_red = tool.gas_reduction(df_snr, comp_dates, average_use)
 
         # check if gas reduction is calculated
-        if gas_red:
-            gas_red = (1 - gas_red) * 100
-        else:
+        if not gas_red:
             continue
+
+        # making gas reduction a percentage
+        gas_red = (1 - gas_red) * 100
 
         # add results to dataframe
         df_results["Average_Use"][i] = average_use
         df_results["Gas_Reduction"][i] = gas_red
 
+        # get the first row  of data
         house_data = df_snr.iloc[0]
 
+        # add aurum data to results
         df_results["House_Type"][i] = house_data["House type"]
         df_results["Residents"][i] = house_data["Residents"]
         df_results["Energy_Label"][i] = house_data["Energy label"]
