@@ -19,7 +19,10 @@ def get_data():
         "bday": date[0],
     }
 
-    resp = requests.post(url, data=params)
+    try:
+        resp = requests.post(url, data=params)
+    except Exception as e:
+        return e
 
     # check if data path exist
     if not os.path.isdir("./data"):

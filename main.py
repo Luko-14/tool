@@ -7,16 +7,20 @@ import tool
 
 """
 TO DO:
-ceck days in tool (average usage and gas reduction)
 export results to new csv (unique)
 rewrite tool.calc_old_usage ()
 create gui & visualise data
+errors and foolproofing
 """
 
 # creating a new analysis
 def run_analysis():
 
-    get_knmi_data.get_data()
+    knmi = get_knmi_data.get_data()
+
+    if knmi != 0:
+        # problemen met verbinding knmi
+        pass
 
     # initializing the aurum dataframe
     df_aurum = pd.read_excel(
