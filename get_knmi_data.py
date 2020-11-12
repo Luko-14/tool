@@ -98,6 +98,7 @@ def compare_dates(RANGE, seq, df):
 
     # y-m-d first date of aurum data
     BEGIN_DATE = np.datetime64(pd.to_datetime("2020-8-1"))
+    set_date = BEGIN_DATE
 
     comp_date_seq = {}
 
@@ -135,7 +136,8 @@ def compare_dates(RANGE, seq, df):
                     and new_check_temp >= (new_temp - RANGE)
                 ):
 
-                    set_date = new_date + np.timedelta64(1, "D")
+                    if (new_date + np.timedelta64(1, "D")) > set_date:
+                        set_date = new_date + np.timedelta64(1, "D")
 
                     # check if new weighted temp is not 0
                     while True:
@@ -237,26 +239,25 @@ def main():
     # open csv
     df = pd.read_csv("./data/knmi_data.csv", parse_dates=["Date"], index_col="Date")
 
-    seq = compare_dates(5, 3, df)
+    seq = compare_dates(6, 3, df)
     dates = get_seq_weighted_dates(4, df)
     print(dates)
     print(seq)
+
+    x = 0
+    i = 1
+    while x < 90:
+        x = 0
+        dicto = compare_dates(i, 3, df)
+
+        for h, j in dicto.items():
+            x += h * len(j)
+
+        print("bij een range van {} heb je {} verg dagen".format(i, x))
+
+        i += 1
+
     return dates
-
-    # x = 0
-    # i = 1
-    # while x < 250:
-    #     x = 0
-    #     dicto = compare_dates(i, 3)
-
-    #     for h, j in dicto.items():
-    #         x += h * len(j)
-
-    #     print("bij een range van {} heb je {} verg dagen".format(i, x))
-
-    #     i += 1
-
-    # print(i)
 
 
 # run main program if the file is executed
