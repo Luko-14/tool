@@ -14,12 +14,19 @@ def filter_df(data_frame, serial_number):
 
     df = data_frame[filt]
 
-    # combining date and time
+    # changing datatype from string to time
     df["Measurement time"] = df["Measurement time"].apply(
-        lambda x: np.timedelta64(x.hour, "h")
+        lambda x: np.timedelta64(x.split(":")[0], "h")
     )
 
+    df["Measurement date"] = pd.to_datetime(df["Measurement date"], format="%d-%m-%Y")
+
+    # creating new collumn with date and time combined
     df["Date_time"] = df["Measurement date"] + df["Measurement time"]
+
+    # change datatype of measurement valvue to float
+    df["Measurement value"] = df["Measurement value"].str.replace(",", ".")
+    df["Measurement value"] = df["Measurement value"].astype(float)
 
     # sort by date_time and drop unused colums
     df = df.set_index(df["Date_time"])
@@ -39,8 +46,8 @@ def filter_df(data_frame, serial_number):
 # calculate avarage usage
 def average_use(df, dates):
 
-    tot_usg = 0
-    days = 0
+    tot_usg = 0.0
+    days = 0.0
     # sum all gas usage from comp dates
     for _, ls in dates.items():
         for items in ls:
@@ -89,7 +96,9 @@ def gas_reduction(df, dates, av_use):
 
             # calculates the gas use for heating
             new_usage = df1.sum() - days * av_use
-            old_usage = calc_old_usage(df, old_seq, days) - days * av_use
+            old_usage = (
+                calc_old_usage(df, old_seq, days) + av_use * days / 0.24 - days * av_use
+            )
 
             # checks if gas use is positive
             if new_usage > 0 and old_usage > 0:

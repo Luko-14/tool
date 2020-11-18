@@ -2,3 +2,4 @@
 *.code-workspace
 data
 __pycache__
+results

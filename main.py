@@ -22,12 +22,25 @@ def run_analysis():
         # problemen met verbinding knmi
         pass
 
-    # initializing the aurum dataframe
-    df_aurum = pd.read_excel(
-        "./data/aurum_data.xls",
-        sheet_name="Alle data Aurum+ Pioneering",
-        parse_dates=["Measurement date"],
-    )
+    # creating list of every item in aurum data
+    aurum_csv_list = os.listdir("./aurum data")
+
+    # creating list with temp aurum dataframes
+    aurum_ls = []
+
+    for item in aurum_csv_list:
+        # add dataframe to list
+        aurum_ls.append(
+            pd.read_csv(
+                ("./aurum data/" + item),
+                sep=";",
+                low_memory=False,
+            )
+        )
+
+    # initializing aurum dataframe and removing temp dataframes
+    df_aurum = pd.concat(aurum_ls)
+    del aurum_ls, aurum_csv_list
 
     # initializing the knmi dataframe
     df_knmi = pd.read_csv(
@@ -35,7 +48,9 @@ def run_analysis():
     )
 
     # initializing the results dataframe
-    df_results = pd.read_excel("./data/aurum_data.xls", sheet_name="Pioneering data")
+    df_results = pd.read_excel(
+        "./data/Gegevens onderzoek t.b.v. Saxion- Pioneering.xlsx", sheet_name="Blad1"
+    )
 
     # renaming some collumns
     df_results.rename(
@@ -108,7 +123,22 @@ def run_analysis():
     # removing None from database
     df_results.dropna(inplace=True)
 
-    return df_results
+    # get current time
+    now = str(pd.to_datetime("today"))
+    timestamp = now.split(":")[:-1]
+    timestamp = "-".join(timestamp)
+    timestamp = timestamp.replace(" ", "_")
+
+    # check if results directory exists
+    if not os.path.isdir("./results"):
+        os.mkdir("./results")
+
+    results_path = "./results/result {}.csv".format(timestamp)
+
+    # create adn write new csv file
+    df_results.to_csv(results_path)
+
+    return 0
 
 
 # run main program if the file is executed
