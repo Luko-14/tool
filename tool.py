@@ -64,12 +64,12 @@ def average_use(df, dates):
 
 
 # calcualte the old usage
-def calc_old_usage(df, old_seq, days):
+def calc_old_usage(df_knmi, sum_weighted, old_seq):
     return 0
 
 
 # calculates the gas usage for heating
-def gas_reduction(df, dates, av_use):
+def gas_reduction(df_snr, df_knmi, dates, av_use):
 
     # checks if there is data for average use
     if av_use == None:
@@ -84,21 +84,25 @@ def gas_reduction(df, dates, av_use):
             # breaks tuple down in new and old sequence
             new_seq = items[0]
             old_seq = items[1]
+
             # creates dataframe for gas consumption for days in new_seq
-            df1 = df.loc[new_seq[0] : new_seq[1]]["Measurement value"]
+            df1 = df_snr.loc[new_seq[0] : new_seq[1]]["Measurement value"]
 
             # checks if dataframe is not empty
             if df1.empty:
                 continue
+
+            # calculates sum of weighted degree days
+            sum_weighted = df_knmi.loc[new_seq[0] : new_seq[1]][
+                "weight_degr_days"
+            ].sum()
 
             # calculates the number of days
             days = df1.index.size / 24
 
             # calculates the gas use for heating
             new_usage = df1.sum() - days * av_use
-            old_usage = (
-                calc_old_usage(df, old_seq, days) + av_use * days / 0.24 - days * av_use
-            )
+            old_usage = calc_old_usage(df_knmi, sum_weighted, old_seq) - days * av_use
 
             # checks if gas use is positive
             if new_usage > 0 and old_usage > 0:
@@ -138,7 +142,7 @@ def main():
     df_snr = filter_df(df_aurum, 1011240)
 
     av = average_use(df_snr, average_dates)
-    gu = gas_reduction(df_snr, comp_dates, av)
+    gu = gas_reduction(df_snr, df_knmi, comp_dates, av)
 
     print(av)
     print(gu)

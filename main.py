@@ -7,7 +7,6 @@ import tool
 
 """
 TO DO:
-export results to new csv (unique)
 rewrite tool.calc_old_usage ()
 create gui & visualise data
 errors and foolproofing
@@ -98,7 +97,7 @@ def run_analysis():
 
         # calculate average use and reduction procentile
         average_use = tool.average_use(df_snr, average_dates)
-        gas_red = tool.gas_reduction(df_snr, comp_dates, average_use)
+        gas_red = tool.gas_reduction(df_snr, df_knmi, comp_dates, average_use)
 
         # check if gas reduction is calculated
         if not gas_red:
