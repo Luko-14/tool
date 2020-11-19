@@ -18,7 +18,7 @@ class dropbutton:
         self.mb.menu.add_checkbutton(
             label="All/None",
             variable=self.all_none,
-            command=self.ceck_all_items,
+            command=self.check_all_items,
         )
 
         for i in self.items:
@@ -28,13 +28,16 @@ class dropbutton:
                 self.mb.menu.add_checkbutton(label=i, variable=self.value_ls[i][0])
             )
 
-    def ceck_all_items(self):
+    def check_all_items(self):
         if self.all_none.get():
             for i in self.value_ls:
                 dropbutton.root.setvar(name=str(i), value=True)
         else:
             for i in self.value_ls:
                 dropbutton.root.setvar(name=str(i), value=False)
+
+    def __repr__(self):
+        return self.name
 
 
 def gui(df_results):
@@ -53,6 +56,10 @@ def gui(df_results):
     df_results["Residents"] = df_results["Residents"].astype(int)
     df_results["Solar_Panels"] = df_results["Solar_Panels"].astype(int)
 
+    ls = df_results.index.tolist()
+    ls.sort()
+
+    dropbuttons.append(dropbutton(df_results.index.name, ls))
     for column in df_results.columns:
         ls = df_results[column].unique()
         ls.sort()
@@ -60,13 +67,14 @@ def gui(df_results):
 
     for i in range(len(dropbuttons)):
         dropbuttons[i].mb.place(
-            relx=0.1 * i + 0.05 * (i + 1),
+            relx=0.1 * i + 0.02 * (i + 1),
             rely=0.1,
-            anchor="c",
+            anchor="nw",
             relwidth=0.1,
             relheight=0.1,
         )
 
+    print(dropbuttons)
     root.mainloop()
 
 
