@@ -1,6 +1,6 @@
 .vscode
 *.code-workspace
-data
+knmi_data.csv
 __pycache__
 results
 test.py
