@@ -23,6 +23,8 @@ class dropbutton:
             command=self.check_all_items,
         )
 
+        self.mb.menu.add_separator()
+
         for i in self.items:
             self.value_ls[i] = []
             self.value_ls[i].append(tk.BooleanVar(dropbutton.root, True, name=str(i)))
