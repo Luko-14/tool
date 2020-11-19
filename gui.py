@@ -1,6 +1,13 @@
 import pandas as pd
 import tkinter as tk
 from tkinter import messagebox
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
+
+# Implement the default Matplotlib key bindings.
+from matplotlib.backend_bases import key_press_handler
+from matplotlib.figure import Figure
+
+import numpy as np
 
 
 class dropbutton:
@@ -52,6 +59,17 @@ def gui(df_results):
     canvas = tk.Canvas(root, height=500, width=1000)
     canvas.pack()
 
+    frame_fig1 = tk.Frame(canvas)
+    frame_fig1.place(relx=0.1, rely=0.25, relwidth=(0.8), relheight=(0.65))
+
+    fig1 = Figure(dpi=100)
+    t = np.arange(0, 3, 0.01)
+    fig1.add_subplot(111).plot(t, 2 * np.sin(2 * np.pi * t))
+
+    canvas_fig1 = FigureCanvasTkAgg(fig1, master=frame_fig1)  # A tk.DrawingArea.
+    canvas_fig1.draw()
+    canvas_fig1.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH)
+
     dropbutton.root = root
     dropbutton.canvas = canvas
 
@@ -68,9 +86,11 @@ def gui(df_results):
     for column in df_results.columns:
         ls = df_results[column].unique()
         ls.sort()
+
         if df_results[column].dtype == float:
             for i in range(len(ls)):
                 ls[i] = round(ls[i], 3)
+
         dropbuttons.append(dropbutton(column, ls))
 
     for i in range(len(dropbuttons)):
@@ -92,15 +112,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-# def lbl1():
-
-
-# def lbl2():
-
-
-# btn1 = tk.Button(canvas, text="True", command=lbl1)
-# btn1.place(relx=0, rely=0)
-# btn2 = tk.Button(canvas, text="False", command=lbl2)
-# btn2.place(relx=0, rely=0.1)

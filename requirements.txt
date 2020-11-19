@@ -3,3 +3,4 @@ python
     pandas
     os
     numpy
+    matplotlib
