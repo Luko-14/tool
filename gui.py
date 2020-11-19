@@ -13,7 +13,9 @@ class dropbutton:
         self.mb["menu"] = self.mb.menu
 
         self.value_ls = {}
-        self.all_none = tk.BooleanVar(dropbutton.root, name="all_none", value=True)
+        self.all_none = tk.BooleanVar(
+            dropbutton.root, name=(self.name + "_all_none"), value=True
+        )
 
         self.mb.menu.add_checkbutton(
             label="All/None",
@@ -60,6 +62,7 @@ def gui(df_results):
     ls.sort()
 
     dropbuttons.append(dropbutton(df_results.index.name, ls))
+
     for column in df_results.columns:
         ls = df_results[column].unique()
         ls.sort()
@@ -74,7 +77,6 @@ def gui(df_results):
             relheight=0.1,
         )
 
-    print(dropbuttons)
     root.mainloop()
 
 
