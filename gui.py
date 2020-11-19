@@ -23,7 +23,7 @@ class dropbutton:
             command=self.check_all_items,
         )
 
-        self.mb.menu.add_separator()
+        self.mb.menu.insert_separator(1)
 
         for i in self.items:
             self.value_ls[i] = []
@@ -68,6 +68,9 @@ def gui(df_results):
     for column in df_results.columns:
         ls = df_results[column].unique()
         ls.sort()
+        if df_results[column].dtype == float:
+            for i in range(len(ls)):
+                ls[i] = round(ls[i], 3)
         dropbuttons.append(dropbutton(column, ls))
 
     for i in range(len(dropbuttons)):
@@ -83,7 +86,7 @@ def gui(df_results):
 
 
 def main():
-    df = pd.read_csv("./results/result 2020-11-19_11-03.csv", index_col="Serial_number")
+    df = pd.read_csv("./data/result 19nov.csv", index_col="Serial_number")
     gui(df)
 
 
