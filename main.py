@@ -79,14 +79,16 @@ def run_analysis():
         ]
     ] = [None, None, None, None, None, None]
 
+    # setting index collumn
+    df_results.set_index("Serial_number", inplace=True)
     # get dict of dates to check
     average_dates = get_knmi_data.get_seq_weighted_dates(4, df_knmi)
     comp_dates = get_knmi_data.compare_dates(5, 3, df_knmi)
 
     # loop trough each serial number
-    for i in range(df_results.index.size):
+    for i in df_results.index:
 
-        Serial_number = df_results["Serial_number"][i]
+        Serial_number = i
 
         # filter df for serial number
         df_snr = tool.filter_df(df_aurum, Serial_number)

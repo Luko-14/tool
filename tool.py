@@ -102,7 +102,11 @@ def gas_reduction(df_snr, df_knmi, dates, av_use):
 
             # calculates the gas use for heating
             new_usage = df1.sum() - days * av_use
-            old_usage = calc_old_usage(df_knmi, sum_weighted, old_seq) - days * av_use
+            old_usage = (
+                calc_old_usage(df_knmi, sum_weighted, old_seq)
+                - days * av_use
+                + days * av_use / 0.2
+            )
 
             # checks if gas use is positive
             if new_usage > 0 and old_usage > 0:
