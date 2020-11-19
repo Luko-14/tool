@@ -48,7 +48,7 @@ def run_analysis():
 
     # initializing the results dataframe
     df_results = pd.read_excel(
-        "./data/Gegevens onderzoek t.b.v. Saxion- Pioneering.xlsx", sheet_name="Blad1"
+        "./data/Gegevens onderzoek t.b.v. Saxion- Pioneering.xlsx"
     )
 
     # renaming some collumns
