@@ -4,3 +4,4 @@ python
     os
     numpy
     matplotlib
+    scipy
