@@ -11,127 +11,154 @@ from ttkthemes.themed_tk import ThemedTk
 
 
 class AllCheckboxes:
+    # start function
     def __init__(self, df_results):
+        # create dictionary with all boxes
         self.dict = {}
 
+        # get name of index
         index_name = df_results.index.name
+        # get all serial numbers
         ls = df_results.index.tolist()
         ls.sort()
 
-        self.dict[index_name] = Checkboxes(ls)
+        # add checkbox of each serial numbers to dict
+        self.dict[index_name] = Checkboxes(ls, index_name)
 
+        # add each column to dict
         for column in df_results.columns:
-            if df_results[column].dtype == float:
-                df_results[column] = round(df_results[column], 3)
-
+            # creates unique list of column and sorts it
             ls = df_results[column].unique()
             ls.sort()
-
-            self.dict[column] = Checkboxes(ls)
+            # add checkbox of each unique items to dict
+            self.dict[column] = Checkboxes(ls, column)
 
 
 class Checkboxes:
-    def __init__(self, ls):
+    # startup funciton
+    def __init__(self, ls, name):
 
+        # create list of unique items in column
         self.ls = ls
+        # creates dictionary of checkboxes
         self.checkboxes = {}
 
+        # add all/non checkbox and add to dict
         self.checkboxes["All/None"] = []
+        # create allnon variable
         self.checkboxes["All/None"].append(
-            tk.BooleanVar(self.root, True, name=str("All/None"))
+            tk.BooleanVar(self.root, True, name=(name + "_All/None"))
         )
-        self.checkboxes["All/None"].append(None)
+        # create checkbox
+        self.checkboxes["All/None"].append(
+            ttk.Checkbutton(
+                self.frame,
+                text="All/None",
+                variable=self.checkboxes["All/None"][0],
+                command=self.check_all_items,
+            )
+        )
 
+        # create checkbox for each unique item
         for item in self.ls:
             self.checkboxes[item] = []
+            # create variable
             self.checkboxes[item].append(tk.BooleanVar(self.root, True, name=str(item)))
-            self.checkboxes[item].append(None)
-
-    def new_boxes(self):
-        self.checkboxes["All/None"][1] = ttk.Checkbutton(
-            self.frame,
-            text="All/None",
-            variable=self.checkboxes["All/None"][0],
-            command=self.check_all_items,
-        )
-
-        for item in self.ls:
-            self.checkboxes[item][1] = ttk.Checkbutton(
-                self.frame, text=item, variable=self.checkboxes[item][0], width=15
+            # create checkbox
+            self.checkboxes[item].append(
+                ttk.Checkbutton(
+                    self.frame, text=item, variable=self.checkboxes[item][0], width=15
+                )
             )
 
+    # function of all/none button
     def check_all_items(self):
+        # locate the varaible
         allnone = self.checkboxes["All/None"][0]
+        # check state of varaible
         if allnone.get():
+            # changes state of all checkboxes to true
             for i in self.checkboxes:
                 self.root.setvar(name=str(i), value=True)
         else:
+            # changes state of all checkboxes to false
             for i in self.checkboxes:
                 self.root.setvar(name=str(i), value=False)
 
 
+class Buttons:
+    def __init__(self, df_results, frame_buttons):
+        # creat list of filter buttons
+        self.list = []
+
+        # add serial number button
+        name = df_results.index.name.replace("_", " ")
+        self.list.append(Button(name, frame_buttons))
+
+        # for each column add button and add to list
+        for column in df_results.columns:
+            self.list.append(Button(column, frame_buttons))
+
+
+class Button:
+    def __init__(self, name, frame_buttons):
+        # create name of each button
+        self.name = name
+        # create button
+        self.button = ttk.Button(
+            frame_buttons,
+            text=self.name.replace("_", " "),
+            width=15,
+            command=(lambda: button_click(self.name)),
+        )
+
+
 def menu_bar(root):
+    # add menu bar on top
     menubar = tk.Menu(root)
 
+    # add file menu
     mb_file = tk.Menu(menubar, tearoff=False)
+    # add new analysis button
     mb_file.add_command(label="New Analysis", command=lambda: print("Hello"))
+    # add change results file button
     mb_file.add_command(label="Change results file", command=lambda: print("Goodbye"))
+    # adding separator
     mb_file.add_separator()
+    # add exit button
     mb_file.add_command(label="Exit", command=root.destroy)
 
+    # add file to menu bar
     menubar.add_cascade(label="File", menu=mb_file)
 
+    # sets menubar
     root.config(menu=menubar)
 
 
-def draw_buttons(df_results, frame_buttons):
-
-    Buttons = []
-
-    Buttons.append(
-        ttk.Button(
-            frame_buttons, text=df_results.index.name.replace("_", " "), width=15
-        )
-    )
-
-    for column in df_results.columns:
-        Buttons.append(
-            ttk.Button(frame_buttons, text=column.replace("_", " "), width=15)
-        )
-
-    i = 0
-    j = 0
-    while True:
-        if (i % 2) == 0:
-            Buttons[i].grid(row=0, column=j, padx=3, pady=3)
-        else:
-            Buttons[i].grid(row=1, column=j, padx=3, pady=3)
-            j += 1
-
-        if i == (len(Buttons) - 1):
-            break
-        else:
-            i += 1
-
-    Buttons.append(ttk.Button(frame_buttons, text="Apply filters"))
-    Buttons[i + 1].grid(row=0, column=(j + 1), padx=3, pady=3, rowspan=2)
-
-
 def draw_plots(frame_plots, mean, std):
+    # creates figure
     plots = Figure(dpi=100)
+
+    # colors
     std2_color = "orange"
     std1_color = "red"
 
+    # creates x-axis values
     x_axis = np.arange(0, 2 * mean, 0.01)
+    # creates y-axis values
     y_axis = norm.pdf(x_axis, mean, std)
 
+    # add plot
     ax1 = plots.add_subplot()
+    # plot x and y values
     ax1.plot(x_axis, y_axis)
 
+    # set title and lables
     ax1.set_title("Bellcurve gas reduction")
     ax1.set_xlabel("Gas reduction (%)")
     ax1.set_ylabel("Change")
 
+    # creates x-axis ticks
     pos_x = []
     i = 0
     j = int(mean // std + 1)
@@ -139,97 +166,124 @@ def draw_plots(frame_plots, mean, std):
         x = mean - std * (j - i)
         pos_x.append(x)
 
+    # set x-axis ticks
     plt.setp(ax1, xticks=pos_x)
 
+    # creates region between mean - 2std and mean - std
     x_fil1 = np.arange((mean - 2 * std), (mean - std), 0.01)
     y_fil1 = norm.pdf(x_fil1, mean, std)
 
+    # creates region between mean - std and mean + std
     x_fil2 = np.arange((mean - std), (mean + std), 0.01)
     y_fil2 = norm.pdf(x_fil2, mean, std)
 
+    # creates region between mean + std and mean =2 std
     x_fil3 = np.arange((mean + std), (mean + 2 * std), 0.01)
     y_fil3 = norm.pdf(x_fil3, mean, std)
 
+    # fill regions
     ax1.fill_between(x_fil1, y_fil1, alpha=0.25, color=std2_color)
     ax1.fill_between(x_fil2, y_fil2, alpha=0.25, color=std1_color, label="68.2")
     ax1.fill_between(x_fil3, y_fil3, alpha=0.25, color=std2_color, label="95.4%")
 
+    # set x and y axis limits
     ax1.set_xlim(0, 2 * mean)
     ax1.set_ylim(0)
     ax1.legend()
 
+    # make plot tight
     plots.tight_layout(pad=2.5)
 
+    # create and draw canvas
     canvas_plots = FigureCanvasTkAgg(plots, master=frame_plots)
     canvas_plots.draw()
     canvas_plots.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH)
 
 
-def draw_scrollbar(frame_scroll, df_results, name, all_checkboxes):
+def draw_checkboxes(name, all_checkboxes, frame):
 
+    # removes all checkboxes
+    for checkbox in frame.winfo_children():
+        checkbox.pack_forget()
+
+    # changes name to column name
     name = name.replace(" ", "_")
-    canvas_scroll = tk.Canvas(frame_scroll)
 
-    scrollbar = ttk.Scrollbar(
-        frame_scroll, orient=tk.VERTICAL, command=canvas_scroll.yview
-    )
-
-    frame_scroll_items = ttk.Frame(canvas_scroll)
-
-    canvas_scroll.bind(
-        "<Configure>",
-        lambda e: canvas_scroll.configure(scrollregion=canvas_scroll.bbox("all")),
-    )
-
-    canvas_scroll.bind_all(
-        "<MouseWheel>",
-        lambda e: canvas_scroll.yview_scroll(int(-1 * (e.delta / 120)), "units"),
-    )
-
-    canvas_scroll.create_window((0, 0), window=frame_scroll_items)
-    canvas_scroll.configure(yscrollcommand=scrollbar.set)
-
-    Checkboxes.frame = frame_scroll_items
-
-    all_checkboxes.dict[name].new_boxes()
+    # retrieves a list with all checkboxes for input column
     dict_checkbox = all_checkboxes.dict[name].checkboxes
     row = 0
 
+    # places each checkbox in dict
     for i in dict_checkbox:
         dict_checkbox[i][1].pack(anchor="n", pady=6)
         row += 1
 
-    canvas_scroll.pack(side="left", fill="both", expand=True)
-    scrollbar.place(relheight=1, relwidth=0.1, relx=0.9)
+
+def button_click(event):
+    # run draw checkboxes
+    draw_checkboxes(event, all_checkboxes, frame_scroll_items)
+
+
+def draw_buttons(df_results, frame_buttons):
+
+    buttons = Buttons(df_results, frame_buttons)
+    button_list = buttons.list
+    # column number
+    j = 0
+    # add each button
+    for i in range((len(button_list))):
+        # checks if button is in row 0 or 1
+        if (i % 2) == 0:
+            # adds button to row 0
+            button_list[i].button.grid(row=0, column=j, padx=3, pady=3)
+        else:
+            # adds button to row 1
+            button_list[i].button.grid(row=1, column=j, padx=3, pady=3)
+            j += 1
+
+        i += 1
+
+    # creates apply filters button
+    apply_button = ttk.Button(frame_buttons, text="Apply filters")
+    # add apply filter button
+    apply_button.grid(row=0, column=(j + 1), padx=3, pady=3, rowspan=2)
 
 
 def results_gui(df_results):
 
+    # changes datatype to int
     df_results["Residents"] = df_results["Residents"].astype(int)
     df_results["Solar_Panels"] = df_results["Solar_Panels"].astype(int)
 
+    # round floats to 3 decimals
     for column in df_results.columns:
         if df_results[column].dtype == float:
             df_results[column] = round(df_results[column], 3)
 
+    # setup the gui
     root = ThemedTk()
     root.get_themes()
     root.set_theme("breeze")
     root.geometry("1000x500")
+    root.title("Welcome to the analysis")
 
+    # changeable parameters
     p = 12
     scrol_width = 200
     button_height = 150
 
-    root.title("Welcome to the analysis")
+    # add menubar
     menu_bar(root)
 
+    # set root for checkboxes
     Checkboxes.root = root
 
+    # create frames
     frame_buttons = ttk.Frame(root, padding=p)
     frame_scroll = ttk.Frame(root, padding=p)
     frame_plots = ttk.Frame(root, padding=p)
 
+    # place frames
     frame_buttons.place(
         x=scrol_width,
         relwidth=1,
@@ -248,18 +302,53 @@ def results_gui(df_results):
         height=-button_height,
     )
 
+    # create canvas scrollbar
+    canvas_scroll = tk.Canvas(frame_scroll)
+
+    # create scrollbar
+    scrollbar = ttk.Scrollbar(
+        frame_scroll, orient=tk.VERTICAL, command=canvas_scroll.yview
+    )
+
+    # create frame for checkboxes
+    global frame_scroll_items
+    frame_scroll_items = ttk.Frame(canvas_scroll, padding=10)
+
+    # add scrolling features
+    canvas_scroll.bind(
+        "<Configure>",
+        lambda e: canvas_scroll.configure(scrollregion=canvas_scroll.bbox("all")),
+    )
+
+    canvas_scroll.bind_all(
+        "<MouseWheel>",
+        lambda e: canvas_scroll.yview_scroll(int(-1 * (e.delta / 120)), "units"),
+    )
+
+    canvas_scroll.configure(yscrollcommand=scrollbar.set)
+
+    # add scrolling frame to canvas
+    canvas_scroll.create_window((0, 0), window=frame_scroll_items)
+
+    canvas_scroll.pack(side="left", fill="both", expand=True)
+    scrollbar.place(relheight=1, relwidth=0.1, relx=0.9)
+    canvas_scroll.yview_scroll(100000, "pages")
+
+    # create checkboxes
+    Checkboxes.frame = frame_scroll_items
+
+    global all_checkboxes
     all_checkboxes = AllCheckboxes(df_results)
-    draw_scrollbar(frame_scroll, df_results, "Gas Reduction", all_checkboxes)
 
-    # def update(event):
-    #     root.update()
-    #     width = root.winfo_width()
-    #     height = root.winfo_height()
+    # draw checkboxes
+    draw_checkboxes("Serial number", all_checkboxes, frame_scroll_items)
 
+    # create filter buttons
     draw_buttons(df_results, frame_buttons)
 
+    # draw plot
     draw_plots(frame_plots, 14.7, 3.7)
-    # root.bind("<Configure>", update)
+
     root.mainloop()
 
 
