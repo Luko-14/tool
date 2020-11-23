@@ -181,6 +181,11 @@ def draw_scrollbar(frame_scroll, df_results, name, all_checkboxes):
         lambda e: canvas_scroll.configure(scrollregion=canvas_scroll.bbox("all")),
     )
 
+    canvas_scroll.bind_all(
+        "<MouseWheel>",
+        lambda e: canvas_scroll.yview_scroll(int(-1 * (e.delta / 120)), "units"),
+    )
+
     canvas_scroll.create_window((0, 0), window=frame_scroll_items)
     canvas_scroll.configure(yscrollcommand=scrollbar.set)
 
@@ -198,7 +203,7 @@ def draw_scrollbar(frame_scroll, df_results, name, all_checkboxes):
     scrollbar.place(relheight=1, relwidth=0.1, relx=0.9)
 
 
-def gui(df_results):
+def results_gui(df_results):
 
     df_results["Residents"] = df_results["Residents"].astype(int)
     df_results["Solar_Panels"] = df_results["Solar_Panels"].astype(int)
@@ -260,7 +265,7 @@ def gui(df_results):
 
 def main():
     df = pd.read_csv("./data/result 19nov.csv", index_col="Serial_number")
-    gui(df)
+    results_gui(df)
 
 
 if __name__ == "__main__":
