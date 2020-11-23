@@ -10,19 +10,6 @@ from scipy.stats import norm
 from ttkthemes.themed_tk import ThemedTk
 
 
-class Button:
-    def __init__(self, name):
-        self.name = name
-
-        self.mb = ttk.Button(
-            Button.frame,
-            text=self.name.replace("_", " "),
-        )
-
-    def __repr__(self):
-        return self.name
-
-
 class AllCheckboxes:
     def __init__(self, df_results):
         self.dict = {}
@@ -99,23 +86,35 @@ def menu_bar(root):
 
 def draw_buttons(df_results, frame_buttons):
 
-    Button.frame = frame_buttons
-
     Buttons = []
 
-    Buttons.append(Button(df_results.index.name))
+    Buttons.append(
+        ttk.Button(
+            frame_buttons, text=df_results.index.name.replace("_", " "), width=15
+        )
+    )
 
     for column in df_results.columns:
-        Buttons.append(Button(column))
-
-    for i in range(len(Buttons)):
-        Buttons[i].mb.place(
-            relx=0.1 * i + 0.02 * (i + 1),
-            rely=0.1,
-            anchor="nw",
-            relwidth=0.1,
-            relheight=0.2,
+        Buttons.append(
+            ttk.Button(frame_buttons, text=column.replace("_", " "), width=15)
         )
+
+    i = 0
+    j = 0
+    while True:
+        if (i % 2) == 0:
+            Buttons[i].grid(row=0, column=j, padx=3, pady=3)
+        else:
+            Buttons[i].grid(row=1, column=j, padx=3, pady=3)
+            j += 1
+
+        if i == (len(Buttons) - 1):
+            break
+        else:
+            i += 1
+
+    Buttons.append(ttk.Button(frame_buttons, text="Apply filters"))
+    Buttons[i + 1].grid(row=0, column=(j + 1), padx=3, pady=3, rowspan=2)
 
 
 def draw_plots(frame_plots, mean, std):
@@ -170,30 +169,33 @@ def draw_scrollbar(frame_scroll, df_results, name, all_checkboxes):
 
     name = name.replace(" ", "_")
     canvas_scroll = tk.Canvas(frame_scroll)
-    canvas_scroll.place(relheight=1, relwidth=0.9)
 
     scrollbar = ttk.Scrollbar(
         frame_scroll, orient=tk.VERTICAL, command=canvas_scroll.yview
     )
-    scrollbar.place(relheight=1, relwidth=0.1, relx=0.9)
 
-    canvas_scroll.configure(yscrollcommand=scrollbar.set)
+    frame_scroll_items = ttk.Frame(canvas_scroll)
+
     canvas_scroll.bind(
         "<Configure>",
         lambda e: canvas_scroll.configure(scrollregion=canvas_scroll.bbox("all")),
     )
 
-    frame_scroll_items = ttk.Frame(canvas_scroll)
     canvas_scroll.create_window((0, 0), window=frame_scroll_items)
+    canvas_scroll.configure(yscrollcommand=scrollbar.set)
 
     Checkboxes.frame = frame_scroll_items
 
     all_checkboxes.dict[name].new_boxes()
     dict_checkbox = all_checkboxes.dict[name].checkboxes
     row = 0
+
     for i in dict_checkbox:
-        dict_checkbox[i][1].grid(column=0, row=row, pady=10)
+        dict_checkbox[i][1].pack(anchor="n", pady=6)
         row += 1
+
+    canvas_scroll.pack(side="left", fill="both", expand=True)
+    scrollbar.place(relheight=1, relwidth=0.1, relx=0.9)
 
 
 def gui(df_results):
@@ -211,32 +213,34 @@ def gui(df_results):
     root.geometry("1000x500")
 
     p = 12
-    scrol_width = 175
-    button_height = 125
+    scrol_width = 200
+    button_height = 150
 
     root.title("Welcome to the analysis")
     menu_bar(root)
 
     Checkboxes.root = root
 
-    frame_buttons = ttk.Frame(root)
-    frame_scroll = ttk.Frame(root)
-    frame_plots = ttk.Frame(root)
+    frame_buttons = ttk.Frame(root, padding=p)
+    frame_scroll = ttk.Frame(root, padding=p)
+    frame_plots = ttk.Frame(root, padding=p)
 
     frame_buttons.place(
-        x=2 * p + scrol_width,
-        y=p,
-        relwidth=0.6,
+        x=scrol_width,
+        relwidth=1,
+        width=scrol_width,
         height=button_height,
     )
 
-    frame_scroll.place(x=p, y=p, width=scrol_width, relheight=0.95)
+    frame_scroll.place(width=scrol_width, relheight=1)
 
     frame_plots.place(
-        x=2 * p + scrol_width,
-        y=button_height + 2 * p,
-        relwidth=0.6,
-        relheight=0.6,
+        x=scrol_width,
+        y=button_height,
+        relwidth=1,
+        relheight=1,
+        width=-scrol_width,
+        height=-button_height,
     )
 
     all_checkboxes = AllCheckboxes(df_results)
