@@ -56,11 +56,10 @@ def run_analysis():
         sheet_name="Bron data",
         header=1,
     )
-    # The serialnumer as index
-    df_survey.set_index("Serialnummer", inplace=True)
 
     df_survey = df_survey[
         [
+            "Serialnummer",
             "Bouwjaar",
             "Woning duur",
             "Invloed op verwarming",
@@ -71,6 +70,7 @@ def run_analysis():
 
     df_survey.rename(
         columns={
+            "Serialnummer": "Serial_number",
             "Bouwjaar": "Construction_year",
             "Woning duur": "Residence_time_1year",
             "Invloed op verwarming": "Influence_on_heating",
@@ -79,6 +79,9 @@ def run_analysis():
         },
         inplace=True,
     )
+
+    # Serial_number as index
+    df_survey.set_index("Serial_number", inplace=True)
 
     # Replace Ja/Nee with True/False
     df_survey.replace(
