@@ -93,7 +93,7 @@ class Buttons:
         self.list = []
 
         # add serial number button
-        name = df_results.index.name.replace("_", " ")
+        name = df_results.index.name
         self.list.append(Button(name, frame_buttons))
 
         # for each column add button and add to list
@@ -115,7 +115,7 @@ class Button:
 
 
 def filter_data():
-
+    global df_filt
     # create a dataframe for filtering
     df_filt = df_results.copy()
 
@@ -142,9 +142,11 @@ def filter_data():
     amount_of_houses = len(df_filt)
 
     # calculate mean
+    global mean
     mean = df_filt["Gas_Reduction"].mean()
 
     # calculate standard deviation
+    global std
     std = df_filt["Gas_Reduction"].std()
 
     # plot the bellcurve
@@ -155,7 +157,7 @@ def filter_data():
         )
         return 0
 
-    draw_plots(mean, std)
+    draw_plot()
 
 
 def menu_bar():
@@ -180,11 +182,45 @@ def menu_bar():
     root.config(menu=menubar)
 
 
-def draw_plots(mean, std):
-    # deletes old content
-    for checkbox in frame_plots.winfo_children():
-        checkbox.destroy()
+def draw_select_plot(frame_select_plot):
 
+    width = 70
+    height = 30
+
+    global selected_plot
+    selected_plot = tk.StringVar(root, name="plot", value="bellcurve")
+
+    ttk.Radiobutton(
+        frame_select_plot,
+        variable=selected_plot,
+        text="bell",
+        value="bellcurve",
+        width=width,
+        command=filter_data,
+    ).place(rely=0.5, anchor="w")
+
+    ttk.Radiobutton(
+        frame_select_plot,
+        variable=selected_plot,
+        text="bar",
+        value="bar",
+        width=width,
+        command=filter_data,
+    ).place(rely=0.5, y=-height, anchor="w")
+
+    ttk.Radiobutton(
+        frame_select_plot,
+        variable=selected_plot,
+        text="plot",
+        value="plot",
+        width=width,
+        command=filter_data,
+    ).place(rely=0.5, y=+height, anchor="w")
+
+    frame_select_plot.grid_rowconfigure(0)
+
+
+def plot_bellcurve():
     # creates figure
     plots = Figure(figsize=(8, 4))
 
@@ -203,7 +239,7 @@ def draw_plots(mean, std):
     ax1.plot(x_axis, y_axis)
 
     # set title and lables
-    ax1.set_title("Bellcurve gas reduction of " + str(amount_of_houses) + " houses")
+    ax1.set_title("Bellcurve gas reduction")
     ax1.set_xlabel("Gas Reduction(%)")
     ax1.set_ylabel("Chance")
 
@@ -241,9 +277,76 @@ def draw_plots(mean, std):
     ax1.legend()
 
     # make plot tight
-    # plots.tight_layout(pad=2.5)
+    plots.tight_layout(pad=2.5)
 
-    # create and draw canvas
+    return plots
+
+
+def plot_bar():
+    # creates figure
+    plots = Figure(figsize=(10, 5))
+
+    width = 0.25
+    gas_price = 0.80
+
+    df = pd.read_csv("./data/result 2020-11-24_15-48.csv", index_col="Serial_number")
+    # creates figure
+    plots = plt.figure(dpi=96, figsize=(10, 5))
+
+    # creates x-axis values
+    x_axis = df.index.tolist()
+    x_indexes = np.arange(len(x_axis))
+
+    # creates y-axis values
+    y_axis1 = df["New_usage"].tolist()
+    y_axis2 = df["Old_usage"].tolist()
+
+    y_axis3 = []
+
+    for i in range(len(y_axis1)):
+        y_axis3.append((y_axis2[i] - y_axis1[i]) * gas_price)
+
+    # add plot
+    ax1 = plots.add_subplot()
+
+    # plot x and y values
+    ax1.bar(
+        x_indexes - width, y_axis1, width=width, color="blue", label="New usage (m^3)"
+    )
+    ax1.bar(x_indexes, y_axis2, width=width, color="red", label="Old usage (m^3)")
+    ax1.bar(
+        x_indexes + width, y_axis3, width=width, color="green", label="Money saved (€)"
+    )
+
+    # set title and lables
+    ax1.set_title("Gas usage")
+    ax1.set_xlabel("Serial number")
+
+    # create boundaries
+    ax1.set_ylim(0)
+    ax1.set_xlim(0)
+
+    # add legend
+    plt.legend()
+    # set ticks
+    plt.xticks(ticks=x_indexes, labels=x_axis, fontsize=9)
+
+    return plots
+
+
+def draw_plot():
+    # deletes old content
+    for items in frame_plots.winfo_children():
+        items.destroy()
+
+    for items in frame_plot_info.winfo_children():
+        items.destroy()
+
+    if selected_plot.get() == "bellcurve":
+        plots = plot_bellcurve()
+    elif selected_plot.get() == "bar":
+        plots = plot_bar()
+
     canvas_plots = FigureCanvasTkAgg(plots, master=frame_plots)
     canvas_plots.draw()
     canvas_plots.get_tk_widget().place(anchor="sw")
@@ -252,6 +355,16 @@ def draw_plots(mean, std):
     toolbar = NavigationToolbar2Tk(canvas_plots, frame_plots)
     toolbar.update()
     canvas_plots.get_tk_widget().pack()
+
+    # creating labels
+    text = "Number of houses: {} \nMean:{} \nStandard deviation: {}".format(
+        amount_of_houses, round(mean, 2), round(std, 2)
+    )
+    label = ttk.Label(
+        frame_plot_info, text=text, relief=tk.SOLID, borderwidth=2, padding=3
+    )
+    # add text to label frame
+    label.pack(side=tk.RIGHT)
 
 
 def draw_checkboxes(name, all_checkboxes):
@@ -283,7 +396,8 @@ def button_click(button):
 
     # try to set "unpress" laspressed
     try:
-        last_pressed.state(["!pressed", "!disabled"])
+        if last_pressed != button.button:
+            last_pressed.state(["!pressed", "!disabled"])
     except Exception:
         pass
 
@@ -295,25 +409,37 @@ def draw_buttons(df_results, frame_buttons):
 
     buttons = Buttons(df_results, frame_buttons)
     button_list = buttons.list
-    # column number
+    visable_buttons = [
+        "Serial_number",
+        "Residents",
+        "House_Type",
+        "Energy_Label",
+        "Postal_Code",
+    ]
+    # column and row number
     j = 0
+    i = 0
     # add each button
-    for i in range((len(button_list))):
-        # checks if button is in row 0 or 1
-        if (i % 2) == 0:
-            # adds button to row 0
-            button_list[i].button.grid(row=0, column=j, padx=3, pady=3)
-        else:
-            # adds button to row 1
-            button_list[i].button.grid(row=1, column=j, padx=3, pady=3)
-            j += 1
+    for button in button_list:
+        if button.name in visable_buttons:
+            # checks if button is in row 0 or 1
+            if (i % 3) == 0:
+                # adds button to row 0
+                button.button.grid(row=1, column=j, padx=3, pady=3)
+            elif (i % 3) == 1:
+                # adds button to row 1
+                button.button.grid(row=2, column=j, padx=3, pady=3)
+            elif (i % 3) == 2:
+                # adds button to row 2
+                button.button.grid(row=3, column=j, padx=3, pady=3)
+                j += 1
 
-        i += 1
+            i += 1
 
     # creates apply filters button
     apply_button = ttk.Button(frame_buttons, text="Apply filters", command=filter_data)
     # add apply filter button
-    apply_button.grid(row=0, column=(j + 1), padx=3, pady=3, rowspan=2)
+    apply_button.grid(row=0, column=(j + 1), padx=3, pady=3, ipady=12, rowspan=4)
 
     return button_list[0]
 
@@ -322,6 +448,7 @@ def results_gui():
 
     # changes datatype to int
     df_results["Residents"] = df_results["Residents"].astype(int)
+    df_results["Solar_Panels"] = df_results["Solar_Panels"].astype(int)
     df_results["Solar_Panels"] = df_results["Solar_Panels"].astype(int)
 
     # round floats to 3 decimals
@@ -340,7 +467,9 @@ def results_gui():
     # changeable parameters
     p = 12
     scrol_width = 200
-    button_height = 150
+    button_height = 120
+    button_width = 510
+    select_plot_width = 100
 
     # add menubar
     menu_bar()
@@ -348,25 +477,45 @@ def results_gui():
     # create frames
     frame_buttons = ttk.Frame(root, padding=p)
     frame_scroll = ttk.Frame(root, padding=p)
+
+    global frame_plot_info
+    frame_plot_info = ttk.Frame(root, padding=p)
+
+    frame_select_plot = ttk.Frame(root, padding=p)
+
     global frame_plots
     frame_plots = ttk.Frame(root, padding=p)
 
     # place frames
     frame_buttons.place(
         x=scrol_width,
-        relwidth=1,
-        width=scrol_width,
+        width=button_width,
         height=button_height,
     )
 
     frame_scroll.place(width=scrol_width, relheight=1)
 
-    frame_plots.place(
+    frame_plot_info.place(
+        x=scrol_width + button_width,
+        height=button_height,
+        relwidth=1,
+        width=-button_width - scrol_width,
+    )
+
+    frame_select_plot.place(
         x=scrol_width,
+        y=button_height,
+        relheight=1,
+        width=select_plot_width,
+        height=-button_height,
+    )
+
+    frame_plots.place(
+        x=scrol_width + select_plot_width,
         y=button_height,
         relwidth=1,
         relheight=1,
-        width=-scrol_width,
+        width=-scrol_width - select_plot_width,
         height=-button_height,
     )
 
@@ -414,6 +563,8 @@ def results_gui():
     # adding first checkboxes
     button_click(first_button)
 
+    # creating and adding type of plots
+    draw_select_plot(frame_select_plot)
     # draw plot
     filter_data()
 
