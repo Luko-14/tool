@@ -51,7 +51,43 @@ def run_analysis():
         "./data/Gegevens onderzoek t.b.v. Saxion- Pioneering.xlsx"
     )
 
-    # renaming some collumns
+    df_survey = pd.read_excel(
+        "./data/Enquéte resultaat 1ste deel- Radiator WaterBalans - Oktober 2020_November 9, 2020_09.12.xlsx",
+        sheet_name="Bron data",
+        header=1,
+    )
+    # The serialnumer as index
+    df_survey.set_index("Serialnummer", inplace=True)
+
+    df_survey = df_survey[
+        [
+            "Bouwjaar",
+            "Woning duur",
+            "Invloed op verwarming",
+            "Verandering van de grotte van huishouden",
+            "Verandering in bewoningsgedrag",
+        ]
+    ]
+
+    df_survey.rename(
+        columns={
+            "Bouwjaar": "Construction_year",
+            "Woning duur": "Residence_time_1year",
+            "Invloed op verwarming": "Influence_on_heating",
+            "Verandering van de grotte van huishouden": "Change_number_of_residents",
+            "Verandering in bewoningsgedrag": "Change_in_resident_behaviour",
+        },
+        inplace=True,
+    )
+
+    # Replace Ja/Nee with True/False
+    df_survey.replace(
+        ("Ja", "Nee", "Langer dan één jaar", "Korter dan één jaar"),
+        (True, False, True, False),
+        inplace=True,
+    )
+
+    # renaming some columns results
     df_results.rename(
         columns={
             df_results.columns[0]: "Postal_Code",
@@ -132,9 +168,6 @@ def run_analysis():
         df_results["Energy_Label"][i] = house_data["Energy label"]
         df_results["Solar_Panels"][i] = house_data["Solar panels"]
 
-    # removing None from database
-    df_results.dropna(inplace=True)
-
     # get current time
     now = str(pd.to_datetime("today"))
     timestamp = now.split(":")[:-1]
@@ -146,6 +179,11 @@ def run_analysis():
         os.mkdir("./results")
 
     results_path = "./results/result {}.csv".format(timestamp)
+
+    df_results = pd.concat([df_results, df_survey], axis=1)
+
+    # removing None from database
+    df_results.dropna(inplace=True)
 
     # create adn write new csv file
     df_results.to_csv(results_path)
