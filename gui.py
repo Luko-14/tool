@@ -183,7 +183,7 @@ def draw_plots(mean, std):
         checkbox.destroy()
 
     # creates figure
-    plots = Figure()
+    plots = Figure(figsize=(8, 4))
 
     # colors
     std2_color = "orange"
@@ -201,8 +201,8 @@ def draw_plots(mean, std):
 
     # set title and lables
     ax1.set_title("Bellcurve gas reduction")
-    ax1.set_xlabel("Gas reduction (%)")
-    ax1.set_ylabel("Change")
+    ax1.set_xlabel("Gas Reduction(%)")
+    ax1.set_ylabel("Chance")
 
     # creates x-axis ticks
     pos_x = []

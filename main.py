@@ -76,8 +76,11 @@ def run_analysis():
             "Solar_Panels",
             "Average_Use",
             "Gas_Reduction",
+            "Days",
+            "Old_usage",
+            "New_usage",
         ]
-    ] = [None, None, None, None, None, None]
+    ] = [None, None, None, None, None, None, None, None, None]
 
     # setting index collumn
     df_results.set_index("Serial_number", inplace=True)
@@ -99,11 +102,16 @@ def run_analysis():
 
         # calculate average use and reduction procentile
         average_use = tool.average_use(df_snr, average_dates)
-        gas_red = tool.gas_reduction(df_snr, df_knmi, comp_dates, average_use)
+        values = tool.gas_reduction(df_snr, df_knmi, comp_dates, average_use)
 
         # check if gas reduction is calculated
-        if not gas_red:
+        if not values:
             continue
+        # unpacks data from values
+        gas_red = values[0]
+        days = values[1]
+        old_usage = values[2]
+        new_usage = values[3]
 
         # making gas reduction a percentage
         gas_red = (1 - gas_red) * 100
@@ -111,6 +119,9 @@ def run_analysis():
         # add results to dataframe
         df_results["Average_Use"][i] = average_use
         df_results["Gas_Reduction"][i] = gas_red
+        df_results["Days"][i] = days
+        df_results["Old_usage"][i] = old_usage
+        df_results["New_usage"][i] = new_usage
 
         # get the first row  of data
         house_data = df_snr.iloc[0]

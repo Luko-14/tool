@@ -6,13 +6,15 @@ import get_knmi_data
 # filter dataframe for serial number gas and a valvue
 def filter_df(data_frame, serial_number):
 
+    df = data_frame.copy()
+
     filt = (
-        (data_frame["Serialnumber"] == serial_number)
-        & (data_frame["Measurement source type"] == "gas")
-        & (data_frame["Measurement value"] != None)
+        (df["Serialnumber"] == serial_number)
+        & (df["Measurement source type"] == "gas")
+        & (df["Measurement value"] != None)
     )
 
-    df = data_frame[filt]
+    df = df[filt]
 
     # changing datatype from string to time
     df["Measurement time"] = df["Measurement time"].apply(
@@ -78,6 +80,10 @@ def gas_reduction(df_snr, df_knmi, dates, av_use):
     # crates list for average use
     av_ls = []
 
+    total_days = 0
+    total_old_usage = 0
+    total_new_usage = 0
+
     # go through each item in dict compare dates (from get_knmi_data)
     for _, ls in dates.items():
         for items in ls:
@@ -112,11 +118,18 @@ def gas_reduction(df_snr, df_knmi, dates, av_use):
             if new_usage > 0 and old_usage > 0:
                 # add gas reduction to list
                 av_ls.append(new_usage / old_usage)
+                total_days += days
+                total_old_usage += old_usage
+                total_new_usage += new_usage
 
     # checks if list is not empty
     if av_ls:
-        # returns average gas reduction
-        return sum(av_ls) / len(av_ls)
+        # transforms total_days to int
+        total_days = int(round(total_days))
+        total_average = sum(av_ls) / len(av_ls)
+
+        # returns values to main
+        return (total_average, total_days, total_old_usage, total_new_usage)
     else:
         return None
 
