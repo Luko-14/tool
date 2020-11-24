@@ -128,7 +128,7 @@ def filter_data():
         item = all_dict[key]
         # go through each checkbox
         for i in item.ls:
-            # check if checkbox is Flase
+            # check if checkbox is False
             if not item.checkboxes[i][0].get():
                 # check if column is the index column
                 if key == df_filt.index.name:
@@ -137,6 +137,9 @@ def filter_data():
                 else:
                     # filter results
                     df_filt = df_filt[df_filt[key] != i]
+
+    global amount_of_houses
+    amount_of_houses = len(df_filt)
 
     # calculate mean
     mean = df_filt["Gas_Reduction"].mean()
@@ -200,7 +203,7 @@ def draw_plots(mean, std):
     ax1.plot(x_axis, y_axis)
 
     # set title and lables
-    ax1.set_title("Bellcurve gas reduction")
+    ax1.set_title("Bellcurve gas reduction of " + str(amount_of_houses) + " houses")
     ax1.set_xlabel("Gas Reduction(%)")
     ax1.set_ylabel("Chance")
 
