@@ -110,7 +110,7 @@ class Button:
             frame_buttons,
             text=self.name.replace("_", " "),
             width=15,
-            command=(lambda: button_click(self.name)),
+            command=(lambda: button_click(self)),
         )
 
 
@@ -271,9 +271,21 @@ def draw_checkboxes(name, all_checkboxes):
     canvas_scroll.yview_moveto(0)
 
 
-def button_click(event):
+def button_click(button):
+    global last_pressed
     # run draw checkboxes
-    draw_checkboxes(event, all_checkboxes)
+    draw_checkboxes(button.name, all_checkboxes)
+
+    button.button.state(["pressed", "!disabled"])
+
+    # try to set "unpress" laspressed
+    try:
+        last_pressed.state(["!pressed", "!disabled"])
+    except Exception:
+        pass
+
+    # set button to pressed
+    last_pressed = button.button
 
 
 def draw_buttons(df_results, frame_buttons):
@@ -299,6 +311,8 @@ def draw_buttons(df_results, frame_buttons):
     apply_button = ttk.Button(frame_buttons, text="Apply filters", command=filter_data)
     # add apply filter button
     apply_button.grid(row=0, column=(j + 1), padx=3, pady=3, rowspan=2)
+
+    return button_list[0]
 
 
 def results_gui():
@@ -391,11 +405,11 @@ def results_gui():
     global all_checkboxes
     all_checkboxes = AllCheckboxes(df_results)
 
-    # draw checkboxes
-    draw_checkboxes("Serial number", all_checkboxes)
-
     # create filter buttons
-    draw_buttons(df_results, frame_buttons)
+    first_button = draw_buttons(df_results, frame_buttons)
+
+    # adding first checkboxes
+    button_click(first_button)
 
     # draw plot
     filter_data()
