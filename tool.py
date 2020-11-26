@@ -3,6 +3,8 @@ import pandas as pd
 
 import get_knmi_data
 
+from math import isnan
+
 # filter dataframe for serial number gas and a valvue
 def filter_df(data_frame, serial_number):
 
@@ -66,12 +68,90 @@ def average_use(df, dates):
 
 
 # calcualte the old usage
-def calc_old_usage(df_knmi, sum_weighted, old_seq):
-    return 0
+def calc_old_usage(df_knmi, seq_weighted_days, old_seq, df_old_usage, av_use):
+    tot_old_usage = 0
+    begin_old_seq = pd.to_datetime(old_seq[0])
+    end_old_seq = pd.to_datetime(old_seq[1])
+
+    # sequince is in same month
+    if begin_old_seq.month == end_old_seq.month:
+        # sets date to string (m-year)
+        date = str(begin_old_seq.month) + "-" + str(begin_old_seq.year)
+        # gets old usage for that month
+        try:
+            tot_old_usage += df_old_usage[date]
+        except Exception:
+            return False
+
+    # sequince is in same year
+    elif begin_old_seq.month < end_old_seq.month:
+        # calculates amount of months in seq
+        months = begin_old_seq.month - end_old_seq.month
+        # get usage for each month
+        for month in range(months):
+            # add month to startmonth
+            month = begin_old_seq.month + month
+            # sets date to string (m-year)
+            date = str(month) + "-" + str(begin_old_seq.year)
+            # gets old usage for that month
+            try:
+                tot_old_usage += df_old_usage[date]
+            except Exception:
+                return False
+
+    # sequince if different years
+    elif begin_old_seq.month > end_old_seq.month:
+        # calculates amount of months in seq
+        months = end_old_seq.month - begin_old_seq.month
+        # get usage for each month
+        for month in range(months):
+            # add month to startmonth
+            month = begin_old_seq.month + month
+            # creats year variable. if month > 12 adds one year
+            year = begin_old_seq.year + month // 12
+            # sets month to int between 1 and 12
+            month = 1 + (month - 1) % 12
+            # sets date to string (m-year)
+            date = str(month) + "-" + str(year)
+            # gets old usage for that month
+            try:
+                tot_old_usage += df_old_usage[date]
+            except Exception:
+                return False
+
+    # checks if tot_old_usage is a not number
+    if isnan(tot_old_usage):
+        # sets total gas usage to yearly gas usage
+        tot_old_usage = df_old_usage["Yearly_gas_usage"]
+        # checks if tot_old_usage is a number
+        if isnan(tot_old_usage):
+            # no usable values in df_old_usage data frame
+            return False
+        # filters df_knmi to 2019
+        df_knmi = df_knmi[str(2019) : str(2019)]
+    else:
+        # filters df_knmi to all months between begin and end old seq
+        df_knmi = df_knmi[
+            (str(begin_old_seq.month) + "-" + str(begin_old_seq.year)) : (
+                str(end_old_seq.month) + "-" + str(end_old_seq.year)
+            )
+        ]
+
+    # calculate sum of weighted degree days from new data frame
+    tot_weighted_days = df_knmi["weight_degr_days"].sum()
+
+    # calculate gas usage for heating
+    tot_old_heating_usage = tot_old_usage - av_use * df_knmi.index.size
+
+    # calculate sequence gas usage for heating
+    seq_old_usage = tot_old_heating_usage / tot_weighted_days * seq_weighted_days
+
+    # returns sequence usage
+    return seq_old_usage
 
 
 # calculates the gas usage for heating
-def gas_reduction(df_snr, df_knmi, dates, av_use):
+def gas_reduction(df_snr, df_knmi, dates, av_use, old_usage_snr):
 
     # checks if there is data for average use
     if av_use == None:
@@ -99,20 +179,21 @@ def gas_reduction(df_snr, df_knmi, dates, av_use):
                 continue
 
             # calculates sum of weighted degree days
-            sum_weighted = df_knmi.loc[new_seq[0] : new_seq[1]][
-                "weight_degr_days"
-            ].sum()
+            sum_weighted = df_knmi[new_seq[0] : new_seq[1]]["weight_degr_days"].sum()
 
             # calculates the number of days
             days = df1.index.size / 24
 
             # calculates the gas use for heating
             new_usage = df1.sum() - days * av_use
-            old_usage = (
-                calc_old_usage(df_knmi, sum_weighted, old_seq)
-                - days * av_use
-                + days * av_use / 0.2
+            old_usage = calc_old_usage(
+                df_knmi, sum_weighted, old_seq, old_usage_snr, av_use
             )
+
+            # checks if old usage is calculated
+            if not calc_old_usage:
+                # next sequence
+                continue
 
             # checks if gas use is positive
             if new_usage > 0 and old_usage > 0:
@@ -159,7 +240,7 @@ def main():
     df_snr = filter_df(df_aurum, 1011240)
 
     av = average_use(df_snr, average_dates)
-    gu = gas_reduction(df_snr, df_knmi, comp_dates, av)
+    gu = gas_reduction(df_snr, df_knmi, comp_dates, av, av)
 
     print(av)
     print(gu)

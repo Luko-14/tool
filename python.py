@@ -1,6 +1,1 @@
-for i in range(100):
-    print("LoL")
-    i += 1
-
-
-print("Hello, world!")
+print(1 + (11 - 1) % 12)

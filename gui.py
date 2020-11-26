@@ -9,6 +9,7 @@ from matplotlib.figure import Figure
 from scipy.stats import norm
 from ttkthemes.themed_tk import ThemedTk
 from math import isnan
+import analysis
 
 
 class AllCheckboxes:
@@ -114,6 +115,12 @@ class Button:
         )
 
 
+def new_analysis():
+    root.destroy()
+    df = analysis.run_analysis()
+    results_gui(df)
+
+
 def filter_data():
     global df_filt
     # create a dataframe for filtering
@@ -153,7 +160,7 @@ def filter_data():
     if isnan(mean) or isnan(std):
         messagebox.showerror(
             title="Data error",
-            message="With the current filters the dataframe has no results. \n Try a differnt filter!",
+            message="With the current filters the dataframe has no results. \nTry a differnt filter!",
         )
         return 0
 
@@ -167,7 +174,7 @@ def menu_bar():
     # add file menu
     mb_file = tk.Menu(menubar, tearoff=False)
     # add new analysis button
-    mb_file.add_command(label="New Analysis", command=lambda: print("Hello"))
+    mb_file.add_command(label="New Analysis", command=new_analysis)
     # add change results file button
     mb_file.add_command(label="Change results file", command=lambda: print("Goodbye"))
     # adding separator
@@ -289,17 +296,16 @@ def plot_bar():
     width = 0.25
     gas_price = 0.80
 
-    df = pd.read_csv("./data/result 2020-11-24_15-48.csv", index_col="Serial_number")
     # creates figure
     plots = plt.figure(dpi=96, figsize=(10, 5))
 
     # creates x-axis values
-    x_axis = df.index.tolist()
+    x_axis = df_results.index.tolist()
     x_indexes = np.arange(len(x_axis))
 
     # creates y-axis values
-    y_axis1 = df["New_usage"].tolist()
-    y_axis2 = df["Old_usage"].tolist()
+    y_axis1 = df_results["New_usage"].tolist()
+    y_axis2 = df_results["Old_usage"].tolist()
 
     y_axis3 = []
 
@@ -444,8 +450,9 @@ def draw_buttons(df_results, frame_buttons):
     return button_list[0]
 
 
-def results_gui():
-
+def results_gui(df):
+    global df_results
+    df_results = df
     # changes datatype to int
     df_results["Residents"] = df_results["Residents"].astype(int)
     df_results["Solar_Panels"] = df_results["Solar_Panels"].astype(int)
@@ -572,9 +579,8 @@ def results_gui():
 
 
 def main():
-    global df_results
-    df_results = pd.read_csv("./data/result 19nov.csv", index_col="Serial_number")
-    results_gui()
+    df = pd.read_csv("./data/result 2020-11-26_14-10.csv", index_col="Serial_number")
+    results_gui(df)
 
 
 if __name__ == "__main__":
