@@ -156,8 +156,15 @@ def filter_data():
     global std
     std = df_filt["Gas_Reduction"].std()
 
-    # plot the bellcurve
-    if isnan(mean) or isnan(std):
+    # checks if there is enough data in the selected houses
+    if selected_plot.get() == "bellcurve":
+        if isnan(mean) or isnan(std):
+            messagebox.showerror(
+                title="Data error",
+                message="With the current filters the dataframe has no results. \nTry a differnt filter!",
+            )
+            return 0
+    elif selected_plot.get() == "bar" and amount_of_houses == 0:
         messagebox.showerror(
             title="Data error",
             message="With the current filters the dataframe has no results. \nTry a differnt filter!",
@@ -227,16 +234,13 @@ def draw_select_plot(frame_select_plot):
     frame_select_plot.grid_rowconfigure(0)
 
 
-def plot_bellcurve():
-    # creates figure
-    plots = Figure(figsize=(8, 4))
-
+def plot_bellcurve(plots):
     # colors
     std2_color = "orange"
     std1_color = "red"
 
     # creates x-axis values
-    x_axis = np.arange(0, 2 * mean, 0.01)
+    x_axis = np.arange(mean - 3 * std, 3 * std + mean, 0.01)
     # creates y-axis values
     y_axis = norm.pdf(x_axis, mean, std)
 
@@ -253,8 +257,8 @@ def plot_bellcurve():
     # creates x-axis ticks
     pos_x = []
     i = 0
-    j = int(mean // std + 1)
-    for i in range(2 * j):
+    j = 2
+    for i in range(2 * j + 1):
         x = mean - std * (j - i)
         pos_x.append(x)
 
@@ -279,33 +283,26 @@ def plot_bellcurve():
     ax1.fill_between(x_fil3, y_fil3, alpha=0.25, color=std2_color, label="95.4%")
 
     # set x and y axis limits
-    ax1.set_xlim(0, 2 * mean)
+    ax1.set_xlim(mean - 3 * std, 3 * std + mean)
     ax1.set_ylim(0)
     ax1.legend()
-
-    # make plot tight
-    plots.tight_layout(pad=2.5)
 
     return plots
 
 
-def plot_bar():
-    # creates figure
-    plots = Figure(figsize=(10, 5))
+def plot_bar(plots):
 
+    # Defining constatns
     width = 0.25
     gas_price = 0.80
 
-    # creates figure
-    plots = plt.figure(dpi=96, figsize=(10, 5))
-
     # creates x-axis values
-    x_axis = df_results.index.tolist()
+    x_axis = df_filt.index.tolist()
     x_indexes = np.arange(len(x_axis))
 
     # creates y-axis values
-    y_axis1 = df_results["New_usage"].tolist()
-    y_axis2 = df_results["Old_usage"].tolist()
+    y_axis1 = df_filt["New_usage"].tolist()
+    y_axis2 = df_filt["Old_usage"].tolist()
 
     y_axis3 = []
 
@@ -330,14 +327,14 @@ def plot_bar():
 
     # create boundaries
     ax1.set_ylim(0)
-    ax1.set_xlim(0)
+    ax1.set_xlim(-0.5)
 
     # add legend
-    plt.legend()
+    ax1.legend()
     # set ticks
-    plt.xticks(ticks=x_indexes, labels=x_axis, fontsize=9)
+    plt.setp(ax1, xticks=x_indexes, xticklabels=x_axis)
 
-    return plots
+    return (plots, ax1)
 
 
 def draw_plot():
@@ -348,11 +345,31 @@ def draw_plot():
     for items in frame_plot_info.winfo_children():
         items.destroy()
 
-    if selected_plot.get() == "bellcurve":
-        plots = plot_bellcurve()
-    elif selected_plot.get() == "bar":
-        plots = plot_bar()
+    # creates figure
+    plots = Figure(
+        figsize=(15, 15),
+        dpi=96,
+        facecolor="#EFF0F1",
+        constrained_layout=True,
+    )
 
+    if selected_plot.get() == "bellcurve":
+        plots = plot_bellcurve(plots)
+        text = "Number of houses: {} \nMean:{} \nStandard deviation: {}".format(
+            amount_of_houses, round(mean, 2), round(std, 2)
+        )
+    elif selected_plot.get() == "bar":
+        plots, ax1 = plot_bar(plots)
+        text = "hier moet nog text komen ".format()
+
+        root.update()
+        width = root.winfo_width() - scrol_width - select_plot_width
+
+        if width // amount_of_houses < 80:
+            ax1.set_xlabel("")
+            plt.setp(ax1, xticks=[], xticklabels=[])
+
+    # create and place plot on canvas
     canvas_plots = FigureCanvasTkAgg(plots, master=frame_plots)
     canvas_plots.draw()
     canvas_plots.get_tk_widget().place(anchor="sw")
@@ -363,9 +380,6 @@ def draw_plot():
     canvas_plots.get_tk_widget().pack()
 
     # creating labels
-    text = "Number of houses: {} \nMean:{} \nStandard deviation: {}".format(
-        amount_of_houses, round(mean, 2), round(std, 2)
-    )
     label = ttk.Label(
         frame_plot_info, text=text, relief=tk.SOLID, borderwidth=2, padding=3
     )
@@ -472,6 +486,8 @@ def results_gui(df):
     root.title("Welcome to the analysis")
 
     # changeable parameters
+    global p, scrol_width, button_height, select_plot_width
+
     p = 12
     scrol_width = 200
     button_height = 120

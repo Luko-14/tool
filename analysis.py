@@ -262,6 +262,10 @@ def run_analysis():
         # making gas reduction a percentage
         gas_red = (1 - gas_red) * 100
 
+        # cant have a negative gas reduciton.
+        if gas_red < 0:
+            gas_red = 0
+
         # add results to dataframe
         df_results["Average_Use"][i] = average_use
         df_results["Gas_Reduction"][i] = gas_red
