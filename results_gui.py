@@ -1,4 +1,5 @@
 import tkinter as tk
+from math import isnan
 from tkinter import messagebox, ttk
 
 import matplotlib.pyplot as plt
@@ -8,7 +9,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolb
 from matplotlib.figure import Figure
 from scipy.stats import norm
 from ttkthemes.themed_tk import ThemedTk
-from math import isnan
+
 import analysis
 
 
@@ -40,6 +41,7 @@ class Checkboxes:
     # startup funciton
     def __init__(self, ls, name):
 
+        self.name = name
         # create list of unique items in column
         self.ls = ls
         # creates dictionary of checkboxes
@@ -65,7 +67,9 @@ class Checkboxes:
         for item in self.ls:
             self.checkboxes[item] = []
             # create variable
-            self.checkboxes[item].append(tk.BooleanVar(root, True, name=str(item)))
+            self.checkboxes[item].append(
+                tk.BooleanVar(root, True, name=name + str(item))
+            )
             # create checkbox
             self.checkboxes[item].append(
                 ttk.Checkbutton(
@@ -81,11 +85,11 @@ class Checkboxes:
         if allnone.get():
             # changes state of all checkboxes to true
             for i in self.checkboxes:
-                root.setvar(name=str(i), value=True)
+                root.setvar(name=self.name + str(i), value=True)
         else:
             # changes state of all checkboxes to false
             for i in self.checkboxes:
-                root.setvar(name=str(i), value=False)
+                root.setvar(name=self.name + str(i), value=False)
 
 
 class Buttons:
@@ -117,8 +121,7 @@ class Button:
 
 def new_analysis():
     root.destroy()
-    df = analysis.run_analysis()
-    results_gui(df)
+    analysis.main()
 
 
 def filter_data():
@@ -161,13 +164,13 @@ def filter_data():
         if isnan(mean) or isnan(std):
             messagebox.showerror(
                 title="Data error",
-                message="With the current filters the dataframe has no results. \nTry a differnt filter!",
+                message="With the current filters the dataframe has no results. \nTry a different filter!",
             )
             return 0
     elif selected_plot.get() == "bar" and amount_of_houses == 0:
         messagebox.showerror(
             title="Data error",
-            message="With the current filters the dataframe has no results. \nTry a differnt filter!",
+            message="With the current filters the dataframe has no results. \nTry a different filter!",
         )
         return 0
 
@@ -183,7 +186,7 @@ def menu_bar():
     # add new analysis button
     mb_file.add_command(label="New Analysis", command=new_analysis)
     # add change results file button
-    mb_file.add_command(label="Change results file", command=lambda: print("Goodbye"))
+    # mb_file.add_command(label="Change results file", command=lambda: print("Goodbye"))
     # adding separator
     mb_file.add_separator()
     # add exit button

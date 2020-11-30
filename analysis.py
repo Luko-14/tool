@@ -1,16 +1,13 @@
 import os
+import tkinter as tk
+from tkinter import messagebox, ttk, filedialog
 
 import pandas as pd
+from ttkthemes.themed_tk import ThemedTk
 
 import get_knmi_data
 import tool
-
-"""
-TO DO:
-rewrite tool.calc_old_usage ()
-create gui & visualise data
-errors and foolproofing
-"""
+import results_gui
 
 
 def format_month(date):
@@ -52,7 +49,99 @@ def format_month(date):
 
 
 # creating a new analysis
-def run_analysis():
+def analyse_houes(i, average_dates, comp_dates):
+    Serial_number = i
+
+    # filter df for serial number
+    df_snr = tool.filter_df(df_aurum, Serial_number)
+
+    # find the old usage for the serial number
+    try:
+        old_usage_snr = df_old_usage.loc[Serial_number]
+    except Exception:
+        # if no data is found next serial number
+        return False
+
+    # check if df is empty
+    if df_snr.empty or old_usage_snr.empty:
+        return False
+
+    # calculate average use and reduction procentile
+    average_use = tool.average_use(df_snr, average_dates)
+    values = tool.gas_reduction(df_snr, df_knmi, comp_dates, average_use, old_usage_snr)
+
+    # check if gas reduction is calculated
+    if not values:
+        return False
+    # unpacks data from values
+    gas_red = values[0]
+    days = values[1]
+    old_usage = values[2]
+    new_usage = values[3]
+
+    # making gas reduction a percentage
+    gas_red = (1 - gas_red) * 100
+
+    # cant have a negative gas reduciton.
+    if gas_red < 0:
+        gas_red = 0
+
+    # add results to dataframe
+    df_results["Average_Use"][i] = average_use
+    df_results["Gas_Reduction"][i] = gas_red
+    df_results["Days"][i] = days
+    df_results["Old_usage"][i] = old_usage
+    df_results["New_usage"][i] = new_usage
+
+    # get the first row  of data
+    house_data = df_snr.iloc[0]
+
+    # add aurum data to results
+    df_results["House_Type"][i] = house_data["House type"]
+    df_results["Residents"][i] = house_data["Residents"]
+    df_results["Energy_Label"][i] = house_data["Energy label"]
+    df_results["Solar_Panels"][i] = house_data["Solar panels"]
+
+    # adding survey data to results
+    df_results["Construction_year"][i] = df_survey["Construction_year"][i]
+    df_results["Residence_time_1year"][i] = df_survey["Residence_time_1year"][i]
+    df_results["Influence_on_heating"][i] = df_survey["Influence_on_heating"][i]
+    df_results["Change_number_of_residents"][i] = df_survey[
+        "Change_number_of_residents"
+    ][i]
+    df_results["Change_in_resident_behaviour"][i] = df_survey[
+        "Change_in_resident_behaviour"
+    ][i]
+
+
+# creating a results file
+def results_file():
+    # get current time
+
+    # check if results directory exists
+    if not os.path.isdir("./results"):
+        os.mkdir("./results")
+
+    # checks if a name is given
+    if root.getvar(name="result_name"):
+        results_path = "./results/{}.csv".format(root.getvar(name="result_name"))
+    else:
+        now = str(pd.to_datetime("today"))
+        timestamp = now.split(":")[:-1]
+        timestamp = "-".join(timestamp)
+        timestamp = timestamp.replace(" ", "_")
+        results_path = "./results/result {}.csv".format(timestamp)
+
+    # removing None from database
+    df_results.dropna(inplace=True)
+
+    # create adn write new csv file
+    df_results.to_csv(results_path)
+
+
+# creating all dataframes
+def initialise_df():
+    global df_aurum, df_old_usage, df_knmi, df_results, df_survey
 
     knmi = get_knmi_data.get_data()
 
@@ -60,17 +149,14 @@ def run_analysis():
         # problemen met verbinding knmi
         pass
 
-    # creating list of every item in aurum data
-    aurum_csv_list = os.listdir("./aurum data")
-
     # creating list with temp aurum dataframes
     aurum_ls = []
 
-    for item in aurum_csv_list:
+    for item in root.getvar(name="aurum"):
         # add dataframe to list
         aurum_ls.append(
             pd.read_csv(
-                ("./aurum data/" + item),
+                item,
                 sep=";",
                 low_memory=False,
             )
@@ -78,7 +164,7 @@ def run_analysis():
 
     # initializing aurum dataframe and removing temp dataframes
     df_aurum = pd.concat(aurum_ls)
-    del aurum_ls, aurum_csv_list
+    del aurum_ls
 
     # initializing the knmi dataframe
     df_knmi = pd.read_csv(
@@ -86,12 +172,10 @@ def run_analysis():
     )
 
     # initializing the results dataframe
-    df_results = pd.read_excel(
-        "./data/Gegevens onderzoek t.b.v. Saxion- Pioneering.xlsx"
-    )
+    df_results = pd.read_excel(root.getvar(name="pioneering"))
 
     df_survey = pd.read_excel(
-        "./data/Enquéte resultaat 1ste deel- Radiator WaterBalans - Oktober 2020_November 9, 2020_09.12.xlsx",
+        root.getvar(name="survey"),
         sheet_name="Bron data",
         header=1,
     )
@@ -221,100 +305,326 @@ def run_analysis():
 
     # setting index collumn
     df_results.set_index("Serial_number", inplace=True)
-    # get dict of dates to check
+
+
+# removes all childeren in root
+def clear_root():
+    for childeren in root.winfo_children():
+        childeren.pack_forget()
+
+
+# creating frame for selecting old results
+def select_analysis(listbox_results, btn_open_analysis, btn_back):
+    # clears root
+    clear_root()
+
+    # changing geometry
+    root.geometry("300x275")
+    # placing labels and buttons
+    ttk.Label(root, text="Select the results file").pack()
+    listbox_results.pack(fill=tk.X)
+    btn_open_analysis.pack(pady=10)
+    btn_back.pack()
+
+
+# opening an old analysis
+def open_results(listbox_results):
+    selected = listbox_results.curselection()[0]
+    selected = listbox_results.get(selected)
+    selected = "./results/" + selected
+
+    root.destroy()
+
+    df = pd.read_csv(selected, index_col="Serial_number")
+    results_gui.results_gui(df)
+
+
+def start_analysis():
+    # clearing root
+    clear_root()
+
+    # placing wait lable
+    ttk.Label(root, text="Analysing data", font=("Sans", "10", "bold")).pack()
+    ttk.Label(root, text="Please wait").pack()
+    root.geometry("300x100")
+
+    # creating and placing progressbar
+    progress = tk.DoubleVar(root, name="pb")
+    pb = ttk.Progressbar(
+        root,
+        orient=tk.HORIZONTAL,
+        variable=progress,
+    )
+    pb.pack(fill=tk.X)
+
+    # updating root
+    root.update()
+
+    # creating dataframes and updating root
+    initialise_df()
+    root.setvar(name="pb", value=5)
+    root.update()
+
+    # get dict of average dates and update root
     average_dates = get_knmi_data.get_seq_weighted_dates(4, df_knmi)
+    root.setvar(name="pb", value=7.5)
+    root.update()
+
+    # get dict of comp dates and update root
     comp_dates = get_knmi_data.compare_dates(5, 3, df_knmi)
+    root.setvar(name="pb", value=10)
+    root.update()
+
+    # creating variable for progressbar
+    j = 1
 
     # loop trough each serial number
     for i in df_results.index:
+        analyse_houes(i, average_dates, comp_dates)
+        # updating progress bar
+        root.setvar(name="pb", value=(10 + 90 / len(df_results.index) * j))
+        root.update()
+        j += 1
 
-        Serial_number = i
+    # creating results file
+    results_file()
 
-        # filter df for serial number
-        df_snr = tool.filter_df(df_aurum, Serial_number)
+    # deleting root
+    root.destroy()
 
-        # find the old usage for the serial number
-        try:
-            old_usage_snr = df_old_usage.loc[Serial_number]
-        except Exception:
-            # if no data is found next serial number
-            continue
+    # open gui to view results
+    results_gui.results_gui(df_results)
 
-        # check if df is empty
-        if df_snr.empty or old_usage_snr.empty:
-            continue
 
-        # calculate average use and reduction procentile
-        average_use = tool.average_use(df_snr, average_dates)
-        values = tool.gas_reduction(
-            df_snr, df_knmi, comp_dates, average_use, old_usage_snr
+# creating a new analysis
+def new_analysis():
+    # checks if all the input is given
+    if (
+        root.getvar(name="aurum")
+        and root.getvar(name="survey")
+        and root.getvar(name="pioneering")
+    ):
+        # starting analysis
+        start_analysis()
+    else:
+        messagebox.showwarning(
+            title="Input warning",
+            message="Make sure to submit all files",
         )
 
-        # check if gas reduction is calculated
-        if not values:
-            continue
-        # unpacks data from values
-        gas_red = values[0]
-        days = values[1]
-        old_usage = values[2]
-        new_usage = values[3]
 
-        # making gas reduction a percentage
-        gas_red = (1 - gas_red) * 100
+# userinput file name
+def select_file(name):
+    selected_file = filedialog.askopenfilename(
+        title="Select {} data".format(name),
+        filetypes=[("excel", "*.xlsx")],
+    )
+    return selected_file
 
-        # cant have a negative gas reduciton.
-        if gas_red < 0:
-            gas_red = 0
 
-        # add results to dataframe
-        df_results["Average_Use"][i] = average_use
-        df_results["Gas_Reduction"][i] = gas_red
-        df_results["Days"][i] = days
-        df_results["Old_usage"][i] = old_usage
-        df_results["New_usage"][i] = new_usage
+# get list of all files in listbox aurum
+def aurum_files():
+    current_files = root.getvar(name="aurum")
+    value = []
+    for i in range(len(root.getvar(name="aurum"))):
+        value.append(current_files[i])
+    return value
 
-        # get the first row  of data
-        house_data = df_snr.iloc[0]
 
-        # add aurum data to results
-        df_results["House_Type"][i] = house_data["House type"]
-        df_results["Residents"][i] = house_data["Residents"]
-        df_results["Energy_Label"][i] = house_data["Energy label"]
-        df_results["Solar_Panels"][i] = house_data["Solar panels"]
+# selecting pioneering data
+def pioneering_data(lbl_pioneering):
+    pioneering_file = select_file("pioneering")
+    root.setvar(name="pioneering", value=pioneering_file)
+    lbl_pioneering["text"] = pioneering_file.split("/")[-1]
 
-        # adding survey data to results
-        df_results["Construction_year"][i] = df_survey["Construction_year"][i]
-        df_results["Residence_time_1year"][i] = df_survey["Residence_time_1year"][i]
-        df_results["Influence_on_heating"][i] = df_survey["Influence_on_heating"][i]
-        df_results["Change_number_of_residents"][i] = df_survey[
-            "Change_number_of_residents"
-        ][i]
-        df_results["Change_in_resident_behaviour"][i] = df_survey[
-            "Change_in_resident_behaviour"
-        ][i]
 
-    # get current time
-    now = str(pd.to_datetime("today"))
-    timestamp = now.split(":")[:-1]
-    timestamp = "-".join(timestamp)
-    timestamp = timestamp.replace(" ", "_")
+# selecting survey data
+def survey_data(lbl_survey):
+    survey_file = select_file("survey")
+    root.setvar(name="survey", value=survey_file)
+    lbl_survey["text"] = survey_file.split("/")[-1]
 
-    # check if results directory exists
-    if not os.path.isdir("./results"):
-        os.mkdir("./results")
 
-    results_path = "./results/result {}.csv".format(timestamp)
+# selecting aurum data
+def aurum_data(listbox_aurum):
+    files = filedialog.askopenfilenames(
+        title="Select aurum data",
+        filetypes=[("csv", "*.csv")],
+    )
+    value = aurum_files()
+    for aurum_file in files:
+        if not aurum_file in value:
+            listbox_aurum.insert("end", aurum_file.split("/")[-1])
+            value.append(aurum_file)
+        else:
+            messagebox.showwarning(
+                title="File warning",
+                message='File: "{}" has already been selected. \nTry a different file!'.format(
+                    aurum_file.split("/")[-1]
+                ),
+            )
 
-    # removing None from database
-    df_results.dropna(inplace=True)
+    root.setvar(name="aurum", value=value)
 
-    # create adn write new csv file
-    df_results.to_csv(results_path)
 
-    return df_results
+# removing aurum data
+def remove_aurum_data(listbox_aurum):
+    value = aurum_files()
+    selected = listbox_aurum.curselection()
+    for index in selected[::-1]:
+        listbox_aurum.delete(index)
+        del value[index]
+
+    root.setvar(name="aurum", value=value)
+
+
+# select parameters for new analysis
+def parameters_analysis(
+    lbl_pioneering, lbl_survey, listbox_aurum, btn_back, name_entry
+):
+    clear_root()
+
+    root.geometry("300x500")
+
+    btn_start_analysis = ttk.Button(
+        root,
+        command=new_analysis,
+        text="Start analysis",
+        width=25,
+        padding=3,
+    )
+
+    btn_select_pioneering = ttk.Button(
+        root,
+        text="select file with pioneering data",
+        command=lambda: pioneering_data(lbl_pioneering),
+    )
+
+    btn_select_survey = ttk.Button(
+        root,
+        text="select file with the survey data",
+        command=lambda: survey_data(lbl_survey),
+    )
+
+    btn_select_aurom = ttk.Button(
+        root,
+        text="select files with aurum data",
+        command=lambda: aurum_data(listbox_aurum),
+    )
+
+    btn_remove_aurom = ttk.Button(
+        root,
+        text="Remove from list",
+        command=lambda: remove_aurum_data(listbox_aurum),
+        width=25,
+        padding=3,
+    )
+
+    btn_select_pioneering.pack(fill=tk.BOTH)
+    ttk.Label(root, text="Pioneering:", font=("Sans", "10", "bold")).pack(fill=tk.BOTH)
+    lbl_pioneering.pack(fill=tk.BOTH)
+
+    btn_select_survey.pack(fill=tk.BOTH)
+    ttk.Label(root, text="survey:", font=("Sans", "10", "bold")).pack(fill=tk.BOTH)
+    lbl_survey.pack(fill=tk.BOTH)
+
+    btn_select_aurom.pack(fill=tk.BOTH)
+    listbox_aurum.pack(fill=tk.BOTH)
+    btn_remove_aurom.pack()
+
+    ttk.Label(root, text="enter name of results file").pack()
+    name_entry.pack(fill=tk.Y)
+
+    btn_start_analysis.pack(pady=5)
+    btn_back.pack()
+
+
+# go back to start
+def back(btn_new_analysys, btn_select_analysis):
+    clear_root()
+    root.geometry("300x90")
+    btn_new_analysys.pack(pady=10)
+    btn_select_analysis.pack()
+
+
+def main():
+
+    # setup the gui
+    global root
+    root = ThemedTk()
+    root.get_themes()
+    root.set_theme("breeze")
+    root.geometry("300x90")
+    root.title("Welcome to the analysis")
+
+    listbox_results = tk.Listbox(root)
+
+    resutls_list = os.listdir("./results")
+
+    for result in resutls_list:
+        listbox_results.insert("end", result)
+
+    listbox_results.selection_set("end")
+
+    tk.StringVar(root, name="pioneering")
+    root.setvar(name="pioneering", value="")
+
+    tk.StringVar(root, name="survey")
+    root.setvar(name="survey", value="")
+
+    tk.StringVar(root, name="aurum")
+    root.setvar(name="aurum", value=[])
+
+    var_result_name = tk.StringVar(root, name="result_name")
+    root.setvar(name="result_name", value="")
+
+    name_entry = ttk.Entry(root, textvariable=var_result_name)
+
+    lbl_pioneering = ttk.Label(root, wraplength=300)
+    lbl_survey = ttk.Label(root, wraplength=300)
+
+    listbox_aurum = tk.Listbox(root, selectmode="multiple")
+
+    btn_open_analysis = ttk.Button(
+        root,
+        text="Open selected analysis",
+        command=lambda: open_results(listbox_results),
+        width=25,
+        padding=3,
+    )
+
+    btn_back = ttk.Button(
+        root,
+        text="Back",
+        command=lambda: back(btn_new_analysys, btn_select_analysis),
+        width=25,
+        padding=3,
+    )
+
+    btn_new_analysys = ttk.Button(
+        root,
+        text="New Analysis",
+        command=lambda: parameters_analysis(
+            lbl_pioneering, lbl_survey, listbox_aurum, btn_back, name_entry
+        ),
+        width=25,
+        padding=3,
+    )
+
+    btn_select_analysis = ttk.Button(
+        root,
+        text="Open old analysis",
+        command=lambda: select_analysis(listbox_results, btn_open_analysis, btn_back),
+        width=25,
+        padding=3,
+    )
+
+    btn_new_analysys.pack(pady=10)
+    btn_select_analysis.pack()
+
+    root.mainloop()
 
 
 # run main program if the file is executed
 if __name__ == "__main__":
-    results = run_analysis()
-    print(results)
+    main()
