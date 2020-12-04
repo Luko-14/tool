@@ -87,8 +87,8 @@ def analyse_houes(i, average_dates, comp_dates):
         gas_red = 0
 
     # add results to dataframe
-    df_results["Average_Use"][i] = average_use
-    df_results["Gas_Reduction"][i] = gas_red
+    df_results["Average_use"][i] = average_use
+    df_results["Gas_reduction"][i] = gas_red
     df_results["Days"][i] = days
     df_results["Old_usage"][i] = old_usage
     df_results["New_usage"][i] = new_usage
@@ -97,10 +97,10 @@ def analyse_houes(i, average_dates, comp_dates):
     house_data = df_snr.iloc[0]
 
     # add aurum data to results
-    df_results["House_Type"][i] = house_data["House type"]
+    df_results["House_type"][i] = house_data["House type"]
     df_results["Residents"][i] = house_data["Residents"]
-    df_results["Energy_Label"][i] = house_data["Energy label"]
-    df_results["Solar_Panels"][i] = house_data["Solar panels"]
+    df_results["Energy_label"][i] = house_data["Energy label"]
+    df_results["Solar_panels"][i] = house_data["Solar panels"]
 
     # adding survey data to results
     df_results["Construction_year"][i] = df_survey["Construction_year"][i]
@@ -137,6 +137,9 @@ def results_file():
 
     # create adn write new csv file
     df_results.to_csv(results_path)
+
+    # returning path
+    return results_path
 
 
 # creating all dataframes
@@ -270,26 +273,73 @@ def initialise_df():
     # renaming some columns results
     df_results.rename(
         columns={
-            df_results.columns[0]: "Postal_Code",
+            df_results.columns[0]: "Postal_code",
             df_results.columns[1]: "Serial_number",
+            df_results.columns[2]: "District_heating",
+            df_results.columns[3]: "Underfloor_heating",
+            df_results.columns[4]: "Gasmeter_type",
         },
         inplace=True,
     )
 
     # remove unnecessary columns
-    df_results = df_results[["Postal_Code", "Serial_number"]]
+    df_results = df_results[
+        [
+            "Postal_code",
+            "Serial_number",
+            "District_heating",
+            "Underfloor_heating",
+            "Gasmeter_type",
+        ]
+    ]
 
-    # format data
-    df_results["Postal_Code"] = df_results["Postal_Code"].str.replace(" ", "")
-    df_results["Postal_Code"] = df_results["Postal_Code"].str.upper()
+    # format  postal ocde data
+    df_results["Postal_code"] = df_results["Postal_code"].str.replace(" ", "")
+    df_results["Postal_code"] = df_results["Postal_code"].str.upper()
+
+    # formatting ja nee to true false
+    df_results["District_heating"] = df_results["District_heating"].str.replace(
+        "Ja", "True"
+    )
+
+    df_results["District_heating"] = df_results["District_heating"].str.replace(
+        "Nee", "False"
+    )
+
+    # formatting partial cases to partial
+    df_results["Underfloor_heating"] = df_results["Underfloor_heating"].str.replace(
+        "Ja, alleen in badkamer, keuken of andere kleine ruimte", "Partial"
+    )
+
+    df_results["Underfloor_heating"] = df_results["Underfloor_heating"].str.replace(
+        "Ja, alleen in de badkamer, keuken of andere kleine ruimte", "Partial"
+    )
+
+    # formatting ja nee to true false
+    df_results["Underfloor_heating"] = df_results["Underfloor_heating"].str.replace(
+        "Ja", "True"
+    )
+    df_results["Underfloor_heating"] = df_results["Underfloor_heating"].str.replace(
+        "Nee", "False"
+    )
+
+    # formatting slimme meter to smart meter
+    df_results["Gasmeter_type"] = df_results["Gasmeter_type"].str.replace(
+        "Slimme meter", "Smart meter"
+    )
+
+    # formatting integers to mechanical gas meter in gasmeter_type column
+    df_results.loc[
+        df_results["Gasmeter_type"] != "Smart meter", "Gasmeter_type"
+    ] = "Mechanical Gasmeter"
 
     # adding empty columms
     df_results[
         [
-            "House_Type",
+            "House_type",
             "Residents",
-            "Energy_Label",
-            "Solar_Panels",
+            "Energy_label",
+            "Solar_panels",
             "Construction_year",
             "Residence_time_1year",
             "Influence_on_heating",
@@ -298,8 +348,8 @@ def initialise_df():
             "Days",
             "Old_usage",
             "New_usage",
-            "Average_Use",
-            "Gas_Reduction",
+            "Average_use",
+            "Gas_reduction",
         ]
     ] = None
 
@@ -387,13 +437,15 @@ def start_analysis():
         j += 1
 
     # creating results file
-    results_file()
+    path = results_file()
 
-    # deleting root
+    # deleting root and old dataframes
     root.destroy()
 
+    # open fresh results
+    df = pd.read_csv(path, index_col="Serial_number")
     # open gui to view results
-    results_gui.results_gui(df_results)
+    results_gui.results_gui(df)
 
 
 # creating a new analysis

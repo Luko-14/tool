@@ -1,0 +1,14 @@
+Serial_number,Postal_code,District_heating,Underfloor_heating,Gasmeter_type,House_type,Residents,Energy_label,Solar_panels,Construction_year,Residence_time_1year,Influence_on_heating,Change_number_of_residents,Change_in_resident_behaviour,Days,Old_usage,New_usage,Average_use,Gas_reduction
+1013491,7522BA,False,False,Smart meter,cornerHouse,1.0,c,13.0,1954,True,False,False,False,4,8.152667450058756,2.692471081,0.0768,65.06158580039029
+1011240,7543ES,False,False,Smart meter,detachedHouse,2.0,a,16.0,2006,True,False,False,False,4,14.517277411190452,14.469962184769232,0.608123076923077,1.7849911956212994
+1011267,7546PW,False,Partial,Smart meter,cornerHouse,2.0,g,0.0,1928,True,False,False,False,4,1.7804429178342223,0.5152948272307694,0.24627692307692306,71.73869488114225
+1013553,7514BT,False,False,Mechanical meter,semiDetachedHouse,4.0,f,0.0,1924,True,False,False,True,4,20.724910060562234,16.36704037161538,0.35593846153846154,17.154999058516896
+1012373,7542NS,False,False,Mechanical meter,semiDetachedHouse,6.0,c,32.0,1990,True,False,False,True,4,12.708914399349181,7.558386889538461,0.13144615384615385,36.36274298825428
+1012352,7511AD,False,False,Mechanical meter,apartment,2.0,c,0.0,1998,True,False,False,False,4,6.86532237841999,4.559123075923077,0.02990769230769231,26.709289959809045
+1011341,7523HJ,False,False,Mechanical meter,semiDetachedHouse,4.0,a,0.0,2006,True,False,False,True,4,10.688319623971799,6.064952335999999,0.1104,40.13136100261815
+1013672,7514AV,False,False,Mechanical meter,semiDetachedHouse,1.0,a,0.0,1981,True,True,False,False,2,8.510826424247227,0.4287076923076923,0.030646153846153847,94.96279596201951
+1013671,7531MB,False,False,Mechanical meter,detachedHouse,2.0,b,9.0,1990,True,True,False,False,4,20.026426058580295,12.051615794846153,0.05501538461538462,37.82203735229651
+1013667,7523AC,False,False,Mechanical meter,semiDetachedHouse,2.0,c,0.0,1992,True,False,False,True,4,7.556778450691494,4.976679434615384,0.07273846153846154,32.93331215778418
+1011216,7548BM,False,False,Mechanical meter,detachedHouse,3.0,c,12.0,1987,True,False,False,True,4,341.7972050980747,13.284227472384615,0.6568615384615385,96.02939332214818
+1013654,7534KA,False,False,Mechanical meter,detachedHouse,2.0,b,16.0,1998,True,False,False,True,4,2.220916568742656,2.785097648,0.0,0
+1013702,7521GE,False,Partial,Mechanical meter,semiDetachedHouse,4.0,g,0.0,1940,True,False,False,True,4,3.5802151315194806,6.469773908769231,0.7905230769230768,0

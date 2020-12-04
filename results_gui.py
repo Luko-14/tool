@@ -33,6 +33,7 @@ class AllCheckboxes:
             # creates unique list of column and sorts it
             ls = df_results[column].unique()
             ls.sort()
+
             # add checkbox of each unique items to dict
             self.dict[column] = Checkboxes(ls, column)
 
@@ -153,11 +154,11 @@ def filter_data():
 
     # calculate mean
     global mean
-    mean = df_filt["Gas_Reduction"].mean()
+    mean = df_filt["Gas_reduction"].mean()
 
     # calculate standard deviation
     global std
-    std = df_filt["Gas_Reduction"].std()
+    std = df_filt["Gas_reduction"].std()
 
     # checks if there is enough data in the selected houses
     if selected_plot.get() == "bellcurve":
@@ -435,9 +436,9 @@ def draw_buttons(df_results, frame_buttons):
     visable_buttons = [
         "Serial_number",
         "Residents",
-        "House_Type",
-        "Energy_Label",
-        "Postal_Code",
+        "House_type",
+        "Energy_label",
+        "Postal_code",
     ]
     # column and row number
     j = 0
@@ -472,8 +473,8 @@ def results_gui(df):
     df_results = df
     # changes datatype to int
     df_results["Residents"] = df_results["Residents"].astype(int)
-    df_results["Solar_Panels"] = df_results["Solar_Panels"].astype(int)
-    df_results["Solar_Panels"] = df_results["Solar_Panels"].astype(int)
+    df_results["Solar_panels"] = df_results["Solar_panels"].astype(int)
+    df_results["Construction_year"] = df_results["Construction_year"].astype(int)
 
     # round floats to 3 decimals
     for column in df_results.columns:
@@ -598,7 +599,7 @@ def results_gui(df):
 
 
 def main():
-    df = pd.read_csv("./data/result 2020-11-26_14-10.csv", index_col="Serial_number")
+    df = pd.read_csv("./data/new test.csv", index_col="Serial_number")
     results_gui(df)
 
 
