@@ -67,7 +67,10 @@ def analyse_houes(i, average_dates, comp_dates):
         return False
 
     # calculate average use and reduction procentile
-    average_use = tool.average_use(df_snr, average_dates)
+    average_use = tool.average_use(
+        df_snr, average_dates, df_results.loc[Serial_number, "Gasmeter_type"]
+    )
+
     values = tool.gas_reduction(df_snr, df_knmi, comp_dates, average_use, old_usage_snr)
 
     # check if gas reduction is calculated
@@ -75,23 +78,27 @@ def analyse_houes(i, average_dates, comp_dates):
         return False
     # unpacks data from values
     gas_red = values[0]
-    days = values[1]
-    old_usage = values[2]
-    new_usage = values[3]
+    old_usage = values[1]
+    new_usage = values[2]
 
     # making gas reduction a percentage
-    gas_red = (1 - gas_red) * 100
+    for j in range(len(gas_red)):
+        gas_red[j] = (1 - gas_red[j]) * 100
 
-    # cant have a negative gas reduciton.
-    if gas_red < 0:
-        gas_red = 0
+        # cant have a negative gas reduciton.
+        if gas_red[j] < 0:
+            gas_red[j] = 0
 
     # add results to dataframe
-    df_results["Average_use"][i] = average_use
-    df_results["Gas_reduction"][i] = gas_red
-    df_results["Days"][i] = days
-    df_results["Old_usage"][i] = old_usage
-    df_results["New_usage"][i] = new_usage
+    df_results["Av_gas_reduction"][i] = gas_red[0]
+    df_results["Min_gas_reduction"][i] = gas_red[1]
+    df_results["Max_gas_reduction"][i] = gas_red[2]
+    df_results["Av_old_usage"][i] = old_usage[0]
+    df_results["Min_old_usage"][i] = old_usage[1]
+    df_results["Max_old_usage"][i] = old_usage[2]
+    df_results["Av_new_usage"][i] = new_usage[0]
+    df_results["Min_new_usage"][i] = new_usage[1]
+    df_results["Max_new_usage"][i] = new_usage[2]
 
     # get the first row  of data
     house_data = df_snr.iloc[0]
@@ -331,7 +338,7 @@ def initialise_df():
     # formatting integers to mechanical gas meter in gasmeter_type column
     df_results.loc[
         df_results["Gasmeter_type"] != "Smart meter", "Gasmeter_type"
-    ] = "Mechanical Gasmeter"
+    ] = "Mechanical meter"
 
     # adding empty columms
     df_results[
@@ -345,11 +352,15 @@ def initialise_df():
             "Influence_on_heating",
             "Change_number_of_residents",
             "Change_in_resident_behaviour",
-            "Days",
-            "Old_usage",
-            "New_usage",
-            "Average_use",
-            "Gas_reduction",
+            "Av_old_usage",
+            "Min_old_usage",
+            "Max_old_usage",
+            "Av_new_usage",
+            "Min_new_usage",
+            "Max_new_usage",
+            "Av_gas_reduction",
+            "Min_gas_reduction",
+            "Max_gas_reduction",
         ]
     ] = None
 

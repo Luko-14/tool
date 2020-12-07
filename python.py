@@ -1,1 +1,8 @@
-print(1 + (11 - 1) % 12)
+a = 7
+b = a
+c = a
+b += 3
+c -= 4
+print(a)
+print(b)
+print(c)

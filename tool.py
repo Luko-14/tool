@@ -5,6 +5,14 @@ import get_knmi_data
 
 from math import isnan
 
+# creating global variables for errors
+global flow_dev_min
+flow_dev_min = (100 - 0.17) / 100
+global flow_dev_max
+flow_dev_max = (100 + 0.92) / 100
+global knmi_deviation
+knmi_deviation = 1
+
 # filter dataframe for serial number gas and a valvue
 def filter_df(data_frame, serial_number):
 
@@ -48,10 +56,12 @@ def filter_df(data_frame, serial_number):
 
 
 # calculate avarage usage
-def average_use(df, dates):
+def average_use(df, dates, gasmeter_type):
 
+    # creating variables
     tot_usg = 0.0
     days = 0.0
+
     # sum all gas usage from comp dates
     for _, ls in dates.items():
         for items in ls:
@@ -60,15 +70,24 @@ def average_use(df, dates):
                 tot_usg += df1.sum()
                 days += df1.index.size / 24
 
-    # return the average usage per day
     if days != 0:
-        return tot_usg / days
+        av_use = tot_usg / days
+        if gasmeter_type == "Mechanical meter":
+            aurum_err = 0.95
+        else:
+            aurum_err = 1
+
+        av_use_min = av_use * aurum_err * flow_dev_min
+        av_use_max = av_use / aurum_err * flow_dev_max
+        # return the average usage per day
+        return (av_use, av_use_min, av_use_max, aurum_err)
     else:
         return None  # no data from serial number
 
 
 # calcualte the old usage
 def calc_old_usage(df_knmi, seq_weighted_days, old_seq, df_old_usage, av_use):
+    # creating and setting variables
     tot_old_usage = 0
     begin_old_seq = pd.to_datetime(old_seq[0])
     end_old_seq = pd.to_datetime(old_seq[1])
@@ -123,7 +142,7 @@ def calc_old_usage(df_knmi, seq_weighted_days, old_seq, df_old_usage, av_use):
     if isnan(tot_old_usage):
         # sets total gas usage to yearly gas usage
         tot_old_usage = df_old_usage["Yearly_gas_usage"]
-        # checks if tot_old_usage is a number
+        # checks if tot_old_usage is not a number
         if isnan(tot_old_usage):
             # no usable values in df_old_usage data frame
             return False
@@ -140,29 +159,52 @@ def calc_old_usage(df_knmi, seq_weighted_days, old_seq, df_old_usage, av_use):
     # calculate sum of weighted degree days from new data frame
     tot_weighted_days = df_knmi["weight_degr_days"].sum()
 
+    # calculates the error of tot_weighted_days
+    er_tot_weighted_days = df_knmi.index.size * knmi_deviation
+
     # calculate gas usage for heating
-    tot_old_heating_usage = tot_old_usage - av_use * df_knmi.index.size
+    tot_old_heating_usage = tot_old_usage - av_use[0] * df_knmi.index.size
+    tot_old_heating_usage_min = tot_old_usage - av_use[2] * df_knmi.index.size
+    tot_old_heating_usage_max = tot_old_usage - av_use[1] * df_knmi.index.size
 
     # calculate sequence gas usage for heating
-    seq_old_usage = tot_old_heating_usage / tot_weighted_days * seq_weighted_days
+    seq_old_usage = tot_old_heating_usage / tot_weighted_days * seq_weighted_days[0]
+
+    seq_old_usage_min = (
+        tot_old_heating_usage_min
+        / (tot_weighted_days + er_tot_weighted_days)
+        * seq_weighted_days[1]
+    )
+
+    seq_old_usage_max = (
+        tot_old_heating_usage_max
+        / (tot_weighted_days - er_tot_weighted_days)
+        * seq_weighted_days[2]
+    )
 
     # returns sequence usage
-    return seq_old_usage
+    return (seq_old_usage, seq_old_usage_min, seq_old_usage_max)
 
 
 # calculates the gas usage for heating
 def gas_reduction(df_snr, df_knmi, dates, av_use, old_usage_snr):
-
     # checks if there is data for average use
     if av_use == None:
         return None
 
-    # crates list for average use
-    av_ls = []
+    # retrieving aurum error
+    aurum_err = av_use[3]
 
-    total_days = 0
-    total_old_usage = 0
-    total_new_usage = 0
+    # crates list for average, min and max use
+    av_ls = []
+    min_ls = []
+    max_ls = []
+
+    # creating variables for total usage
+    # in format [average,min,max]
+    total_days = [0, 0, 0]
+    total_old_usage = [0, 0, 0]
+    total_new_usage = [0, 0, 0]
 
     # go through each item in dict compare dates (from get_knmi_data)
     for _, ls in dates.items():
@@ -178,39 +220,84 @@ def gas_reduction(df_snr, df_knmi, dates, av_use, old_usage_snr):
             if df1.empty:
                 continue
 
-            # calculates sum of weighted degree days
-            sum_weighted = df_knmi[new_seq[0] : new_seq[1]]["weight_degr_days"].sum()
+            # cretes list weighted degree days
+            sum_weighted = []
+
+            sum_weighted.append(
+                df_knmi[new_seq[0] : new_seq[1]]["weight_degr_days"].sum()
+            )
+
+            sum_weighted.append(
+                df_knmi[new_seq[0] : new_seq[1]]["weight_degr_days"].sum()
+                - df_knmi[new_seq[0] : new_seq[1]].index.size
+            )
+
+            sum_weighted.append(
+                df_knmi[new_seq[0] : new_seq[1]]["weight_degr_days"].sum()
+                + df_knmi[new_seq[0] : new_seq[1]].index.size
+            )
 
             # calculates the number of days
             days = df1.index.size / 24
 
-            # calculates the gas use for heating
-            new_usage = df1.sum() - days * av_use
+            # create list of new gas usage
+            new_usage = []
+            # calculates average new gas use
+            new_usage.append(df1.sum() - days * av_use[0])
+            # calculates min new gas use
+            new_usage.append(df1.sum() * flow_dev_min * aurum_err - days * av_use[2])
+            # calculates max new gas use
+            new_usage.append(df1.sum() * flow_dev_max / aurum_err - days * av_use[1])
+
             old_usage = calc_old_usage(
                 df_knmi, sum_weighted, old_seq, old_usage_snr, av_use
             )
 
             # checks if old usage is calculated
-            if not calc_old_usage:
+            if not old_usage:
                 # next sequence
                 continue
 
-            # checks if gas use is positive
-            if new_usage > 0 and old_usage > 0:
-                # add gas reduction to list
-                av_ls.append(new_usage / old_usage)
-                total_days += days
-                total_old_usage += old_usage
-                total_new_usage += new_usage
+            # checks if av gas use is positive
+            if new_usage[0] > 0 and old_usage[0] > 0:
+                # add av gas reduction to list and adds all values
+                av_ls.append(new_usage[0] / old_usage[0])
+                total_days[0] += days
+                total_old_usage[0] += old_usage[0]
+                total_new_usage[0] += new_usage[0]
+
+            # checks if min gas use is positive
+            if new_usage[1] > 0 and old_usage[2] > 0:
+                # add min gas reduction to list and adds all values
+                min_ls.append(new_usage[1] / old_usage[2])
+                total_days[1] += days
+                total_old_usage[2] += old_usage[2]
+                total_new_usage[1] += new_usage[1]
+
+            # checks max av gas use is positive
+            if new_usage[2] > 0 and old_usage[1] > 0:
+                # add max gas reduction to list and adds all values
+                max_ls.append(new_usage[2] / old_usage[1])
+                total_days[2] += days
+                total_old_usage[1] += old_usage[1]
+                total_new_usage[2] += new_usage[2]
 
     # checks if list is not empty
     if av_ls:
-        # transforms total_days to int
-        total_days = int(round(total_days))
-        total_average = sum(av_ls) / len(av_ls)
+        # creating average list
+        total_average = []
+        # adding av min and max to total average
+        total_average.append(sum(av_ls) / len(av_ls))
+        total_average.append(sum(min_ls) / len(min_ls))
+        total_average.append(sum(max_ls) / len(max_ls))
+
+        # normalizing gas usage to years
+        for i in range(3):
+            total_old_usage[i] = total_old_usage[i] / total_days[i] * 365
+            total_new_usage[i] = total_new_usage[i] / total_days[i] * 365
 
         # returns values to main
-        return (total_average, total_days, total_old_usage, total_new_usage)
+        return (total_average, total_old_usage, total_new_usage)
     else:
         return None
 
@@ -239,7 +326,7 @@ def main():
     # filter df for serial nummer
     df_snr = filter_df(df_aurum, 1011240)
 
-    av = average_use(df_snr, average_dates)
+    av = average_use(df_snr, average_dates, "Mechanical meter")
     gu = gas_reduction(df_snr, df_knmi, comp_dates, av, av)
 
     print(av)

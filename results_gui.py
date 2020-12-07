@@ -153,12 +153,19 @@ def filter_data():
     amount_of_houses = len(df_filt)
 
     # calculate mean
-    global mean
-    mean = df_filt["Gas_reduction"].mean()
-
-    # calculate standard deviation
-    global std
-    std = df_filt["Gas_reduction"].std()
+    global mean, std
+    if selected_av_min_max.get() == "Av":
+        mean = df_filt["Av_gas_reduction"].mean()
+        # calculate standard deviation
+        std = df_filt["Av_gas_reduction"].std()
+    elif selected_av_min_max.get() == "Min":
+        mean = df_filt["Min_gas_reduction"].mean()
+        # calculate standard deviation
+        std = df_filt["Min_gas_reduction"].std()
+    elif selected_av_min_max.get() == "Max":
+        mean = df_filt["Max_gas_reduction"].mean()
+        # calculate standard deviation
+        std = df_filt["Max_gas_reduction"].std()
 
     # checks if there is enough data in the selected houses
     if selected_plot.get() == "bellcurve":
@@ -168,6 +175,7 @@ def filter_data():
                 message="With the current filters the dataframe has no results. \nTry a different filter!",
             )
             return 0
+
     elif selected_plot.get() == "bar" and amount_of_houses == 0:
         messagebox.showerror(
             title="Data error",
@@ -215,7 +223,7 @@ def draw_select_plot(frame_select_plot):
         value="bellcurve",
         width=width,
         command=filter_data,
-    ).place(rely=0.5, anchor="w")
+    ).place(rely=0.5, y=-height, anchor="w")
 
     ttk.Radiobutton(
         frame_select_plot,
@@ -224,18 +232,45 @@ def draw_select_plot(frame_select_plot):
         value="bar",
         width=width,
         command=filter_data,
-    ).place(rely=0.5, y=-height, anchor="w")
-
-    ttk.Radiobutton(
-        frame_select_plot,
-        variable=selected_plot,
-        text="plot",
-        value="plot",
-        width=width,
-        command=filter_data,
-    ).place(rely=0.5, y=+height, anchor="w")
+    ).place(rely=0.5, anchor="w")
 
     frame_select_plot.grid_rowconfigure(0)
+
+
+def draw_radio_av_min_max():
+    width = 70
+    height = 30
+
+    global selected_av_min_max
+    selected_av_min_max = tk.StringVar(root, name="av_min_max", value="bellcurve")
+    root.setvar(name="av_min_max", value="Av")
+
+    ttk.Radiobutton(
+        frame_av_min_max,
+        variable=selected_av_min_max,
+        text="Average",
+        value="Av",
+        width=width,
+        command=filter_data,
+    ).place(anchor="w")
+
+    ttk.Radiobutton(
+        frame_av_min_max,
+        variable=selected_av_min_max,
+        text="Minimum",
+        value="Min",
+        width=width,
+        command=filter_data,
+    ).place(y=height, anchor="w")
+
+    ttk.Radiobutton(
+        frame_av_min_max,
+        variable=selected_av_min_max,
+        text="Maximum",
+        value="Max",
+        width=width,
+        command=filter_data,
+    ).place(y=2 * height, anchor="w")
 
 
 def plot_bellcurve(plots):
@@ -299,19 +334,44 @@ def plot_bar(plots):
     # Defining constatns
     width = 0.25
     gas_price = 0.80
+    capsize = 3
 
     # creates x-axis values
     x_axis = df_filt.index.tolist()
     x_indexes = np.arange(len(x_axis))
 
     # creates y-axis values
-    y_axis1 = df_filt["New_usage"].tolist()
-    y_axis2 = df_filt["Old_usage"].tolist()
+    y_axis1 = df_filt["Av_new_usage"].tolist()
+    y_axis2 = df_filt["Av_old_usage"].tolist()
 
+    # creating list of min and max old and new usage
+    ls_min_new = df_filt["Min_new_usage"].tolist()
+    ls_max_new = df_filt["Max_new_usage"].tolist()
+    ls_min_old = df_filt["Min_old_usage"].tolist()
+    ls_max_old = df_filt["Max_old_usage"].tolist()
+
+    # creating error bars for axis 1 and 2
+    er_min_axis1 = df_filt["Av_new_usage"].tolist()
+    er_max_axis1 = df_filt["Max_new_usage"].tolist()
+    er_min_axis2 = df_filt["Av_old_usage"].tolist()
+    er_max_axis2 = df_filt["Max_old_usage"].tolist()
+
+    for i in range(len(x_axis)):
+        er_min_axis1[i] -= ls_min_new[i]
+        er_max_axis1[i] -= y_axis1[i]
+
+        er_min_axis2[i] -= ls_min_old[i]
+        er_max_axis2[i] -= y_axis2[i]
+
+    # creating money saved axis
     y_axis3 = []
+    er_min_axis3 = []
+    er_max_axis3 = []
 
     for i in range(len(y_axis1)):
         y_axis3.append((y_axis2[i] - y_axis1[i]) * gas_price)
+        er_min_axis3.append(y_axis3[i] - (ls_min_old[i] - ls_max_new[i]) * gas_price)
+        er_max_axis3.append((ls_max_old[i] - ls_min_new[i]) * gas_price - y_axis3[i])
 
     # add plot
     ax1 = plots.add_subplot()
@@ -325,6 +385,33 @@ def plot_bar(plots):
         x_indexes + width, y_axis3, width=width, color="green", label="Money saved (€)"
     )
 
+    # plotting the errorbars
+    ax1.errorbar(
+        x_indexes - width,
+        y_axis1,
+        yerr=[er_min_axis1, er_max_axis1],
+        fmt=" ",
+        ecolor="black",
+        capsize=capsize,
+    )
+
+    ax1.errorbar(
+        x_indexes,
+        y_axis2,
+        yerr=[er_min_axis2, er_max_axis2],
+        fmt=" ",
+        ecolor="black",
+        capsize=capsize,
+    )
+
+    ax1.errorbar(
+        x_indexes + width,
+        y_axis3,
+        yerr=[er_min_axis3, er_max_axis3],
+        fmt=" ",
+        ecolor="black",
+        capsize=capsize,
+    )
     # set title and lables
     ax1.set_title("Gas usage")
     ax1.set_xlabel("Serial number")
@@ -362,9 +449,19 @@ def draw_plot():
         text = "Number of houses: {} \nMean:{} \nStandard deviation: {}".format(
             amount_of_houses, round(mean, 2), round(std, 2)
         )
+
+        # placing min max av frame
+        frame_av_min_max.place(
+            x=scrol_width,
+            rely=1,
+            height=100,
+            width=select_plot_width,
+            y=-180,
+        )
+
     elif selected_plot.get() == "bar":
         plots, ax1 = plot_bar(plots)
-        text = "hier moet nog text komen ".format()
+        text = "Normalised to 1 year".format()
 
         root.update()
         width = root.winfo_width() - scrol_width - select_plot_width
@@ -372,6 +469,9 @@ def draw_plot():
         if width // amount_of_houses < 80:
             ax1.set_xlabel("")
             plt.setp(ax1, xticks=[], xticklabels=[])
+
+        # removing min max av frame
+        frame_av_min_max.place_forget()
 
     # create and place plot on canvas
     canvas_plots = FigureCanvasTkAgg(plots, master=frame_plots)
@@ -439,6 +539,7 @@ def draw_buttons(df_results, frame_buttons):
         "House_type",
         "Energy_label",
         "Postal_code",
+        "Gasmeter_type",
     ]
     # column and row number
     j = 0
@@ -497,6 +598,7 @@ def results_gui(df):
     button_height = 120
     button_width = 510
     select_plot_width = 100
+    select_plot_height = 100
 
     # add menubar
     menu_bar()
@@ -512,6 +614,9 @@ def results_gui(df):
 
     global frame_plots
     frame_plots = ttk.Frame(root, padding=p)
+
+    global frame_av_min_max
+    frame_av_min_max = ttk.Frame(root, padding=p)
 
     # place frames
     frame_buttons.place(
@@ -531,10 +636,9 @@ def results_gui(df):
 
     frame_select_plot.place(
         x=scrol_width,
-        y=button_height,
-        relheight=1,
+        y=button_height + 25,
+        height=select_plot_height,
         width=select_plot_width,
-        height=-button_height,
     )
 
     frame_plots.place(
@@ -592,6 +696,10 @@ def results_gui(df):
 
     # creating and adding type of plots
     draw_select_plot(frame_select_plot)
+
+    # creating radio buttons for selecting av min max
+    draw_radio_av_min_max()
+
     # draw plot
     filter_data()
 
@@ -599,7 +707,7 @@ def results_gui(df):
 
 
 def main():
-    df = pd.read_csv("./data/new test.csv", index_col="Serial_number")
+    df = pd.read_csv("./data/with errors.csv", index_col="Serial_number")
     results_gui(df)
 
 
