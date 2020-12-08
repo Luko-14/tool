@@ -547,59 +547,83 @@ def parameters_analysis(
 ):
     clear_root()
 
-    root.geometry("300x500")
+    root.geometry("360x600")
+
+    add_remove = ttk.Frame(root)
+
+    a = ttk.Style()
+    a.configure("my1.TButton", font=("Sans", 14), foreground="#3daee9")
 
     btn_start_analysis = ttk.Button(
         root,
         command=new_analysis,
-        text="Start analysis",
-        width=25,
-        padding=3,
+        text="START ANALYSIS",
+        padding=8,
+        style="my1.TButton",
     )
 
     btn_select_pioneering = ttk.Button(
         root,
-        text="select file with pioneering data",
+        padding=6,
+        text="Select file with the pioneering data",
         command=lambda: pioneering_data(lbl_pioneering),
     )
 
     btn_select_survey = ttk.Button(
         root,
-        text="select file with the survey data",
+        padding=6,
+        text="Select file with the survey data",
         command=lambda: survey_data(lbl_survey),
     )
 
     btn_select_aurom = ttk.Button(
-        root,
-        text="select files with aurum data",
+        add_remove,
+        padding=6,
+        text="Select files with aurum data",
         command=lambda: aurum_data(listbox_aurum),
     )
 
     btn_remove_aurom = ttk.Button(
-        root,
+        add_remove,
         text="Remove from list",
         command=lambda: remove_aurum_data(listbox_aurum),
-        width=25,
-        padding=3,
+        padding=6,
     )
 
-    btn_select_pioneering.pack(fill=tk.BOTH)
-    ttk.Label(root, text="Pioneering:", font=("Sans", "10", "bold")).pack(fill=tk.BOTH)
-    lbl_pioneering.pack(fill=tk.BOTH)
+    ttk.Label(
+        root,
+        padding=4,
+        text="Enter name of the results file: (Optional, default = date)",
+        font=("Sans", "10", "bold"),
+    ).pack(fill=tk.BOTH)
+    name_entry.pack(fill=tk.X, padx=16, pady=(4, 8))
 
-    btn_select_survey.pack(fill=tk.BOTH)
-    ttk.Label(root, text="survey:", font=("Sans", "10", "bold")).pack(fill=tk.BOTH)
-    lbl_survey.pack(fill=tk.BOTH)
+    ttk.Label(root, padding=2, text="Pioneering:", font=("Sans", "10", "bold")).pack(
+        fill=tk.BOTH
+    )
+    lbl_pioneering.pack(fill=tk.BOTH, padx=4)
+    btn_select_pioneering.pack(fill=tk.BOTH, padx=16, pady=(4, 8))
 
-    btn_select_aurom.pack(fill=tk.BOTH)
-    listbox_aurum.pack(fill=tk.BOTH)
-    btn_remove_aurom.pack()
+    ttk.Label(root, padding=2, text="Survey:", font=("Sans", "10", "bold")).pack(
+        fill=tk.BOTH
+    )
+    lbl_survey.pack(fill=tk.BOTH, padx=4)
+    btn_select_survey.pack(fill=tk.BOTH, padx=16, pady=(4, 8))
 
-    ttk.Label(root, text="enter name of results file").pack()
-    name_entry.pack(fill=tk.Y)
+    ttk.Label(root, padding=2, text="Aurum:", font=("Sans", "10", "bold")).pack(
+        fill=tk.BOTH
+    )
+    listbox_aurum.pack(fill=tk.BOTH, padx=4, pady=2)
 
-    btn_start_analysis.pack(pady=5)
-    btn_back.pack()
+    btn_select_aurom.pack(expand=True, fill=tk.BOTH, side=tk.LEFT, padx=(16, 8), pady=4)
+    btn_remove_aurom.pack(
+        expand=True, fill=tk.BOTH, side=tk.RIGHT, padx=(8, 16), pady=4
+    )
+    add_remove.pack(fill=tk.BOTH)
+
+    btn_start_analysis.pack(fill=tk.X, padx=16, pady=(12, 8))
+
+    btn_back.pack(fill=tk.BOTH, padx=16)
 
 
 # go back to start
