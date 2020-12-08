@@ -93,6 +93,8 @@ class Checkboxes:
             # changes state of all checkboxes to true
             for i in self.checkboxes:
                 root.setvar(name=self.name + str(i), value=True)
+            # updates the graph
+            checkbox_click()
         else:
             # changes state of all checkboxes to false
             for i in self.checkboxes:
@@ -127,18 +129,64 @@ class Button:
 
 
 def checkbox_click():
-    if root.getvar(name="View_Data") == 0:
-        filter_data()
-        return None
+    # filters the data
+    filter_data()
+    # if window open load the data frame again
+    if root.getvar(name="View_Data") == 1:
+        load_df_window()
 
 
 def close_window():
+    # destroy the window
     window.destroy(),
+    # sets window var to false
     root.setvar(name="View_Data", value=False),
+    # sets scroll wheel to root scroll
     canvas_scroll.bind_all(
         "<MouseWheel>",
         lambda e: canvas_scroll.yview_scroll(int(-1 * (e.delta / 120)), "units"),
     ),
+
+
+def filter_table():
+    # creating list of all active columns
+    col = []
+    # go through list of all columns
+    for i in column_checkbox.ls:
+        # check if the checkbox is pressed
+        if column_checkbox.checkboxes[i][0].get():
+            # formats the column name and adds it to col
+            col.append(i.replace(" ", "_"))
+
+    # returns the filtered df with only the selected columns
+    return df_filt[col]
+
+
+def load_df_window():
+    # delete old content
+    tv.delete(*tv.get_children())
+
+    df_table = filter_table()
+    # sets the columns of the df to columns of tv
+    col_ls = df_table.columns.tolist()
+    col_ls.insert(0, "Serial_number")
+    tv["column"] = col_ls
+    # shows the headers
+    tv["show"] = "headings"
+
+    # adds set column name as header
+    for column in tv["columns"]:
+        tv.heading(column, text=column.replace("_", " "))
+
+    # turns the dataframe into an array
+    df_rows = df_table.to_numpy()
+    # add index to array
+    df_rows = np.insert(df_rows, 0, df_table.index.values, axis=1)
+
+    # turns array in list of lists
+    df_rows.tolist()
+    for row in df_rows:
+        tv.insert("", "end", values=row)
 
 
 def window_view_data():
@@ -200,13 +248,14 @@ def window_view_data():
         col_list[i] = col_list[i].replace("_", " ")
 
     # creating checkboxes
+    global column_checkbox
     column_checkbox = Checkboxes(col_list, "Columns")
-    column_checkbox = column_checkbox.checkboxes
+    column_checkbox = column_checkbox
 
     # places each checkbox in dict
     row = 0
-    for i in column_checkbox:
-        column_checkbox[i][1].grid(column=0, row=row)
+    for i in column_checkbox.checkboxes:
+        column_checkbox.checkboxes[i][1].grid(column=0, row=row)
         row += 1
 
     # create scrollbar
@@ -236,6 +285,7 @@ def window_view_data():
     canvas_scroll_win.event_generate("<Configure>")
 
     # creating and placing treeview for df_results
+    global tv
     tv = ttk.Treeview(frame_view_df)
     tv.place(relwidth=1, relheight=1)
 
@@ -262,6 +312,10 @@ def window_view_data():
         width=-scrollbar_width,
     )
 
+    # adding data to treeview
+    load_df_window()
+
+    ttk.Button(frame_get_change, text="Apply filters", command=checkbox_click).pack()
     # when delete window (cross top right) is pressed destroy window and set var to false
     window.protocol("WM_DELETE_WINDOW", close_window)
 
