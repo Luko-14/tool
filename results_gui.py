@@ -19,6 +19,9 @@ class AllCheckboxes:
         # create dictionary with all boxes
         self.dict = {}
 
+        # setting  checkbox frame
+        Checkboxes.frame = frame_scroll_items
+
         # get name of index
         index_name = df_results.index.name
         # get all serial numbers
@@ -41,7 +44,6 @@ class AllCheckboxes:
 class Checkboxes:
     # startup funciton
     def __init__(self, ls, name):
-
         self.name = name
         # create list of unique items in column
         self.ls = ls
@@ -54,7 +56,7 @@ class Checkboxes:
         self.checkboxes["All/None"].append(
             tk.BooleanVar(root, True, name=(name + "_All/None"))
         )
-        # create checkbox
+        # create centered allnon checkbox
         self.checkboxes["All/None"].append(
             ttk.Checkbutton(
                 self.frame,
@@ -74,7 +76,11 @@ class Checkboxes:
             # create checkbox
             self.checkboxes[item].append(
                 ttk.Checkbutton(
-                    self.frame, text=item, variable=self.checkboxes[item][0], width=15
+                    self.frame,
+                    text=item,
+                    variable=self.checkboxes[item][0],
+                    width=25,
+                    command=checkbox_click,
                 )
             )
 
@@ -118,6 +124,146 @@ class Button:
             width=15,
             command=(lambda: button_click(self)),
         )
+
+
+def checkbox_click():
+    if root.getvar(name="View_Data") == 0:
+        filter_data()
+        return None
+
+
+def close_window():
+    window.destroy(),
+    root.setvar(name="View_Data", value=False),
+    canvas_scroll.bind_all(
+        "<MouseWheel>",
+        lambda e: canvas_scroll.yview_scroll(int(-1 * (e.delta / 120)), "units"),
+    ),
+
+
+def window_view_data():
+    # check if viewdata is True
+    if root.getvar(name="View_Data") == 1:
+        return None
+
+    # set view_data var to true
+    root.setvar(name="View_Data", value=True)
+
+    # create new window
+    global window
+    window = tk.Toplevel(root)
+    window.geometry("1000x500")
+    window.iconbitmap("./resources/tool_logo.ico")
+
+    # certing frames
+    frame_select_col = ttk.Frame(window, padding=p)
+    frame_get_change = ttk.Frame(window, padding=p)
+    frame_view_df = ttk.Frame(window, padding=p)
+
+    # creating scrollable column view
+    canvas_scroll_win = tk.Canvas(frame_select_col)
+
+    # create frame for checkboxes
+    frame_scroll_items_win = ttk.Frame(canvas_scroll_win, padding=10)
+
+    # add scrolling frame to canvas
+    canvas_scroll_win.create_window((0, 0), window=frame_scroll_items_win, anchor="nw")
+
+    # placing items to window
+    frame_select_col.place(relheight=1, width=scrol_width_window)
+    canvas_scroll_win.place(relheight=1, relwidth=0.9)
+
+    frame_get_change.place(
+        x=scrol_width_window,
+        height=button_height,
+        relwidth=1,
+        width=-scrol_width_window,
+    )
+
+    frame_view_df.place(
+        relwidth=1,
+        relheight=1,
+        x=scrol_width_window,
+        width=-scrol_width_window,
+        y=button_height,
+        height=-button_height,
+    )
+
+    # set frame of checkboxes
+    Checkboxes.frame = frame_scroll_items_win
+
+    # creating list with columns
+    col_list = df_results.columns.tolist()
+
+    # replacing _ with spaces
+    for i in range(len(col_list)):
+        col_list[i] = col_list[i].replace("_", " ")
+
+    # creating checkboxes
+    column_checkbox = Checkboxes(col_list, "Columns")
+    column_checkbox = column_checkbox.checkboxes
+
+    # places each checkbox in dict
+    row = 0
+    for i in column_checkbox:
+        column_checkbox[i][1].grid(column=0, row=row)
+        row += 1
+
+    # create scrollbar
+    scrollbar = ttk.Scrollbar(
+        frame_select_col, orient=tk.VERTICAL, command=canvas_scroll_win.yview
+    )
+
+    # add scrolling features
+    canvas_scroll_win.configure(yscrollcommand=scrollbar.set)
+
+    canvas_scroll_win.bind(
+        "<Configure>",
+        lambda e: canvas_scroll_win.configure(
+            scrollregion=canvas_scroll_win.bbox("all")
+        ),
+    )
+
+    canvas_scroll.bind_all(
+        "<MouseWheel>",
+        lambda e: canvas_scroll_win.yview_scroll(int(-1 * (e.delta / 120)), "units"),
+    )
+    # placing scrollbar
+    scrollbar.place(relheight=1, relwidth=0.1, relx=0.9)
+
+    # run configure event
+    window.update()
+    canvas_scroll_win.event_generate("<Configure>")
+
+    # creating and placing treeview for df_results
+    tv = ttk.Treeview(frame_view_df)
+    tv.place(relwidth=1, relheight=1)
+
+    # creating scrollbars for treeview
+    treescrolly = ttk.Scrollbar(frame_view_df, orient="vertical", command=tv.yview)
+    treescrollx = ttk.Scrollbar(frame_view_df, orient="horizontal", command=tv.xview)
+
+    # configuring treeview
+    tv.configure(xscrollcommand=treescrollx.set, yscrollcommand=treescrolly.set)
+
+    # placing scrollbars
+    treescrolly.place(
+        relx=1,
+        x=-scrollbar_width,
+        width=scrollbar_width,
+        relheight=1,
+        height=-scrollbar_width,
+    )
+    treescrollx.place(
+        rely=1,
+        y=-scrollbar_width,
+        height=scrollbar_width,
+        relwidth=1,
+        width=-scrollbar_width,
+    )
+
+    # when delete window (cross top right) is pressed destroy window and set var to false
+    window.protocol("WM_DELETE_WINDOW", close_window)
 
 
 def new_analysis():
@@ -203,6 +349,12 @@ def menu_bar():
 
     # add file to menu bar
     menubar.add_cascade(label="File", menu=mb_file)
+
+    # add view data
+    menubar.add_cascade(label="View Data", command=window_view_data)
+    # creating boolean and setting value for view data
+    tk.BooleanVar(root, name="View_Data")
+    root.setvar(name="View_Data", value=False)
 
     # sets menubar
     root.config(menu=menubar)
@@ -333,7 +485,6 @@ def plot_bar(plots):
 
     # Defining constatns
     width = 0.25
-    gas_price = 0.80
     capsize = 3
 
     # creates x-axis values
@@ -378,16 +529,18 @@ def plot_bar(plots):
 
     # plot x and y values
     ax1.bar(
-        x_indexes - width, y_axis1, width=width, color="blue", label="New usage (m^3)"
+        x_indexes - width, y_axis2, width=width, color="red", label="Old usage (m^3)"
     )
-    ax1.bar(x_indexes, y_axis2, width=width, color="red", label="Old usage (m^3)")
+
+    ax1.bar(x_indexes, y_axis1, width=width, color="blue", label="New usage (m^3)")
+
     ax1.bar(
         x_indexes + width, y_axis3, width=width, color="green", label="Money saved (€)"
     )
 
     # plotting the errorbars
     ax1.errorbar(
-        x_indexes - width,
+        x_indexes,
         y_axis1,
         yerr=[er_min_axis1, er_max_axis1],
         fmt=" ",
@@ -396,7 +549,7 @@ def plot_bar(plots):
     )
 
     ax1.errorbar(
-        x_indexes,
+        x_indexes - width,
         y_axis2,
         yerr=[er_min_axis2, er_max_axis2],
         fmt=" ",
@@ -429,6 +582,10 @@ def plot_bar(plots):
 
 
 def draw_plot():
+    # set gasprice variable
+    global gas_price
+    gas_price = 0.80
+
     # deletes old content
     for items in frame_plots.winfo_children():
         items.destroy()
@@ -461,7 +618,7 @@ def draw_plot():
 
     elif selected_plot.get() == "bar":
         plots, ax1 = plot_bar(plots)
-        text = "Normalised to 1 year".format()
+        text = "Normalised to 1 year\n Gas price:{}".format(round(gas_price, 2))
 
         root.update()
         width = root.winfo_width() - scrol_width - select_plot_width
@@ -506,7 +663,10 @@ def draw_checkboxes(name, all_checkboxes):
     # places each checkbox in dict
     row = 0
     for i in dict_checkbox:
-        dict_checkbox[i][1].grid(column=1, row=row)
+        if i == "All/None":
+            dict_checkbox[i][1].grid(column=0, row=0)
+        else:
+            dict_checkbox[i][1].grid(column=0, row=row, columnspan=3)
         row += 1
     canvas_scroll.yview_moveto(0)
 
@@ -561,11 +721,6 @@ def draw_buttons(df_results, frame_buttons):
 
             i += 1
 
-    # creates apply filters button
-    apply_button = ttk.Button(frame_buttons, text="Apply filters", command=filter_data)
-    # add apply filter button
-    apply_button.grid(row=0, column=(j + 1), padx=3, pady=3, ipady=12, rowspan=4)
-
     return button_list[0]
 
 
@@ -592,7 +747,7 @@ def results_gui(df):
     root.iconbitmap("./resources/tool_logo.ico")
 
     # changeable parameters
-    global p, scrol_width, button_height, select_plot_width
+    global p, scrol_width, button_height, select_plot_width, scrol_width_window, scrollbar_width
 
     p = 12
     scrol_width = 200
@@ -600,6 +755,8 @@ def results_gui(df):
     button_width = 510
     select_plot_width = 100
     select_plot_height = 100
+    scrol_width_window = 275
+    scrollbar_width = 15
 
     # add menubar
     menu_bar()
@@ -684,8 +841,6 @@ def results_gui(df):
     scrollbar.place(relheight=1, relwidth=0.1, relx=0.9)
 
     # create checkboxes
-    Checkboxes.frame = frame_scroll_items
-
     global all_checkboxes
     all_checkboxes = AllCheckboxes(df_results)
 
@@ -703,6 +858,10 @@ def results_gui(df):
 
     # draw plot
     filter_data()
+
+    # run configure event
+    root.update()
+    canvas_scroll.event_generate("<Configure>")
 
     root.mainloop()
 

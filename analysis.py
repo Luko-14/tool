@@ -91,8 +91,8 @@ def analyse_houes(i, average_dates, comp_dates):
 
     # add results to dataframe
     df_results["Av_gas_reduction"][i] = gas_red[0]
-    df_results["Min_gas_reduction"][i] = gas_red[1]
-    df_results["Max_gas_reduction"][i] = gas_red[2]
+    df_results["Min_gas_reduction"][i] = gas_red[2]
+    df_results["Max_gas_reduction"][i] = gas_red[1]
     df_results["Av_old_usage"][i] = old_usage[0]
     df_results["Min_old_usage"][i] = old_usage[1]
     df_results["Max_old_usage"][i] = old_usage[2]
