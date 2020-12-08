@@ -380,12 +380,15 @@ def select_analysis(listbox_results, btn_open_analysis, btn_back):
     clear_root()
 
     # changing geometry
-    root.geometry("300x275")
+    root.geometry("360x300")
+
     # placing labels and buttons
-    ttk.Label(root, text="Select the results file").pack()
-    listbox_results.pack(fill=tk.X)
-    btn_open_analysis.pack(pady=10)
-    btn_back.pack()
+    ttk.Label(
+        root, padding=2, text="Select the results file", font=("Sans", "10", "bold")
+    ).pack(fill=tk.BOTH)
+    listbox_results.pack(fill=tk.X, padx=2)
+    btn_open_analysis.pack(fill=tk.X, padx=16, pady=8)
+    btn_back.pack(fill=tk.X, padx=16)
 
 
 # opening an old analysis
@@ -406,8 +409,8 @@ def start_analysis():
 
     # placing wait lable
     ttk.Label(root, text="Analysing data", font=("Sans", "10", "bold")).pack()
-    ttk.Label(root, text="Please wait").pack()
-    root.geometry("300x100")
+    ttk.Label(root, text="Please wait...").pack()
+    root.geometry("360x100")
 
     # creating and placing progressbar
     progress = tk.DoubleVar(root, name="pb")
@@ -629,9 +632,9 @@ def parameters_analysis(
 # go back to start
 def back(btn_new_analysys, btn_select_analysis):
     clear_root()
-    root.geometry("300x90")
-    btn_new_analysys.pack(pady=10)
-    btn_select_analysis.pack()
+    root.geometry("360x120")
+    btn_new_analysys.pack(fill=tk.X, pady=(16, 8), padx=16)
+    btn_select_analysis.pack(fill=tk.X, pady=(8, 16), padx=16)
 
 
 def main():
@@ -641,13 +644,16 @@ def main():
     root = ThemedTk()
     root.get_themes()
     root.set_theme("breeze")
-    root.geometry("300x90")
+    root.geometry("360x120")
     root.title("Welcome to the analysis")
     root.iconbitmap("./resources/tool_logo.ico")
 
     listbox_results = tk.Listbox(root)
 
     resutls_list = os.listdir("./results")
+
+    a = ttk.Style()
+    a.configure("my1.TButton", font=("Sans", 14), foreground="#3daee9")
 
     for result in resutls_list:
         listbox_results.insert("end", result)
@@ -677,38 +683,35 @@ def main():
         root,
         text="Open selected analysis",
         command=lambda: open_results(listbox_results),
-        width=25,
-        padding=3,
+        style="my1.TButton",
+        padding=6,
     )
 
     btn_back = ttk.Button(
         root,
         text="Back",
         command=lambda: back(btn_new_analysys, btn_select_analysis),
-        width=25,
-        padding=3,
+        padding=6,
     )
 
     btn_new_analysys = ttk.Button(
         root,
-        text="New Analysis",
+        text="Start new Analysis",
         command=lambda: parameters_analysis(
             lbl_pioneering, lbl_survey, listbox_aurum, btn_back, name_entry
         ),
-        width=25,
-        padding=3,
+        padding=6,
     )
 
     btn_select_analysis = ttk.Button(
         root,
-        text="Open old analysis",
+        text="Open previous Analysis",
         command=lambda: select_analysis(listbox_results, btn_open_analysis, btn_back),
-        width=25,
-        padding=3,
+        padding=6,
     )
 
-    btn_new_analysys.pack(pady=10)
-    btn_select_analysis.pack()
+    btn_new_analysys.pack(fill=tk.X, pady=(16, 8), padx=16)
+    btn_select_analysis.pack(fill=tk.X, pady=(8, 16), padx=16)
 
     root.mainloop()
 
