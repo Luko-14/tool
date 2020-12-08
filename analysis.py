@@ -619,6 +619,7 @@ def main():
     root.set_theme("breeze")
     root.geometry("300x90")
     root.title("Welcome to the analysis")
+    root.iconbitmap("./resources/tool_logo.ico")
 
     listbox_results = tk.Listbox(root)
 
