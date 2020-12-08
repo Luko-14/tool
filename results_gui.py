@@ -488,6 +488,7 @@ def results_gui(df):
     root.set_theme("breeze")
     root.geometry("1000x500")
     root.title("Welcome to the analysis")
+    root.iconbitmap("./resources/tool_logo.ico")
 
     # changeable parameters
     global p, scrol_width, button_height, select_plot_width
