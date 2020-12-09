@@ -247,7 +247,7 @@ def calc_chance():
     # calculating the chance
     chance = df_chance["y-axis"].sum()
     # changing output lable
-    window.setvar(name="Chance", value=("Chance: " + str(round(chance, 2) + " %")))
+    window.setvar(name="Chance", value=("Chance: " + str(round(chance, 2)) + " %"))
 
 
 def draw_window_calc_chance(frame_get_chance):
