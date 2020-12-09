@@ -189,6 +189,95 @@ def load_df_window():
         tv.insert("", "end", values=row)
 
 
+def av_min_max_click():
+    # sets plot to bellcurve
+    selected_plot.set("bellcurve")
+    # filters the data
+    filter_data()
+    if root.getvar(name="View_Data") == 1:
+        window.lift()
+
+
+def input_error(text):
+    # removes always on top from window
+    window.attributes("-topmost", False)
+
+    # shows error
+    messagebox.showerror(title="Input error", message=text)
+
+    # sets always on top from window
+    window.attributes("-topmost", True)
+
+
+def calc_chance():
+    # setting upper and lower bound to input
+    try:
+        lowerbound = window.getvar(name="Min")
+        upperbound = window.getvar(name="Max")
+    except:
+        text = (
+            "Please make sure to enter a value in \n the minimum and maximun chance.",
+        )
+        input_error(text)
+        return None
+
+    # checking if upper and lower bound are numbers
+    try:
+        lowerbound = float(lowerbound)
+        upperbound = float(upperbound)
+    except:
+        text = "Make sure the input is Numeric"
+        input_error(text)
+        return None
+
+    # checks if lowerbound is smaller than upperbound
+    if lowerbound > upperbound:
+        text = "Make sure the lowerbound is smaller than the upperbound"
+        input_error(text)
+        return None
+
+    # creating pandas dataframe with x and y values of graph
+    df_chance = pd.DataFrame(data=({"x-axis": x_axis, "y-axis": y_axis}))
+
+    # filter the dataframe for upper and lower bounds
+    df_chance = df_chance[
+        (df_chance["x-axis"] >= lowerbound) & (df_chance["x-axis"] <= upperbound)
+    ]
+
+    # calculating the chance
+    chance = df_chance["y-axis"].sum()
+    # changing output lable
+    window.setvar(name="Chance", value=("Chance: " + str(round(chance, 2))))
+
+
+def draw_window_calc_chance(frame_get_chance):
+    # creating tk variables for min and max
+    var_min = tk.StringVar(window, name="Min")
+    var_max = tk.StringVar(window, name="Max")
+    var_chance = tk.StringVar(window, name="Chance")
+
+    # creating and placing lable and entry min / max
+    ttk.Label(frame_get_chance, padding=4, text="Minimum gas reduciton").grid(
+        row=0, column=0, sticky="w"
+    )
+
+    ttk.Entry(frame_get_chance, textvariable=var_min).grid(row=0, column=1)
+
+    ttk.Label(frame_get_chance, padding=4, text="Maximum gas reduciton").grid(
+        row=1, column=0, sticky="w"
+    )
+
+    ttk.Entry(frame_get_chance, textvariable=var_max).grid(row=1, column=1)
+
+    # creating button and lable for calculating chance
+    ttk.Button(frame_get_chance, text="Calcualte chance", command=calc_chance).grid(
+        row=2, column=0
+    )
+    ttk.Label(frame_get_chance, padding=4, textvariable=var_chance).grid(
+        row=2, column=1, sticky="w"
+    )
+
+
 def window_view_data():
     # check if viewdata is True
     if root.getvar(name="View_Data") == 1:
@@ -202,11 +291,13 @@ def window_view_data():
     window = tk.Toplevel(root)
     window.geometry("1000x500")
     window.iconbitmap("./resources/tool_logo.ico")
+    window.attributes("-topmost", True)
 
     # certing frames
     frame_select_col = ttk.Frame(window, padding=p)
-    frame_get_change = ttk.Frame(window, padding=p)
+    frame_get_chance = ttk.Frame(window, padding=p)
     frame_view_df = ttk.Frame(window, padding=p)
+    frame_av_max_min = ttk.Frame(window, padding=p)
 
     # creating scrollable column view
     canvas_scroll_win = tk.Canvas(frame_select_col)
@@ -221,11 +312,18 @@ def window_view_data():
     frame_select_col.place(relheight=1, width=scrol_width_window)
     canvas_scroll_win.place(relheight=1, relwidth=0.9)
 
-    frame_get_change.place(
+    frame_av_max_min.place(
         x=scrol_width_window,
+        y=15,
+        height=button_height - 15,
+        width=button_height,
+    )
+
+    frame_get_chance.place(
+        x=scrol_width_window + button_height,
         height=button_height,
         relwidth=1,
-        width=-scrol_width_window,
+        width=-scrol_width_window - button_height,
     )
 
     frame_view_df.place(
@@ -315,7 +413,9 @@ def window_view_data():
     # adding data to treeview
     load_df_window()
 
-    ttk.Button(frame_get_change, text="Apply filters", command=checkbox_click).pack()
+    draw_radio_av_min_max(frame_av_max_min)
+
+    draw_window_calc_chance(frame_get_chance)
     # when delete window (cross top right) is pressed destroy window and set var to false
     window.protocol("WM_DELETE_WINDOW", close_window)
 
@@ -443,39 +543,37 @@ def draw_select_plot(frame_select_plot):
     frame_select_plot.grid_rowconfigure(0)
 
 
-def draw_radio_av_min_max():
-    width = 70
+def draw_radio_av_min_max(frame):
+    # set variables
+    width = 10
     height = 30
 
-    global selected_av_min_max
-    selected_av_min_max = tk.StringVar(root, name="av_min_max", value="bellcurve")
-    root.setvar(name="av_min_max", value="Av")
-
+    # draw and place radio buttons
     ttk.Radiobutton(
-        frame_av_min_max,
+        frame,
         variable=selected_av_min_max,
         text="Average",
         value="Av",
         width=width,
-        command=filter_data,
+        command=av_min_max_click,
     ).place(anchor="w")
 
     ttk.Radiobutton(
-        frame_av_min_max,
+        frame,
         variable=selected_av_min_max,
         text="Minimum",
         value="Min",
         width=width,
-        command=filter_data,
+        command=av_min_max_click,
     ).place(y=height, anchor="w")
 
     ttk.Radiobutton(
-        frame_av_min_max,
+        frame,
         variable=selected_av_min_max,
         text="Maximum",
         value="Max",
         width=width,
-        command=filter_data,
+        command=av_min_max_click,
     ).place(y=2 * height, anchor="w")
 
 
@@ -485,8 +583,10 @@ def plot_bellcurve(plots):
     std1_color = "red"
 
     # creates x-axis values
-    x_axis = np.arange(mean - 3 * std, 3 * std + mean, 0.01)
+    global x_axis
+    x_axis = np.arange(mean - 6 * std, 6 * std + mean, 0.01)
     # creates y-axis values
+    global y_axis
     y_axis = norm.pdf(x_axis, mean, std)
 
     # add plot
@@ -908,7 +1008,11 @@ def results_gui(df):
     draw_select_plot(frame_select_plot)
 
     # creating radio buttons for selecting av min max
-    draw_radio_av_min_max()
+    global selected_av_min_max
+    selected_av_min_max = tk.StringVar(root, name="av_min_max", value="bellcurve")
+    root.setvar(name="av_min_max", value="Av")
+
+    draw_radio_av_min_max(frame_av_min_max)
 
     # draw plot
     filter_data()
