@@ -247,7 +247,7 @@ def calc_chance():
     # calculating the chance
     chance = df_chance["y-axis"].sum()
     # changing output lable
-    window.setvar(name="Chance", value=("Chance: " + str(round(chance, 2))))
+    window.setvar(name="Chance", value=("Chance: " + str(round(chance, 2) + " %")))
 
 
 def draw_window_calc_chance(frame_get_chance):
@@ -270,7 +270,7 @@ def draw_window_calc_chance(frame_get_chance):
     ttk.Entry(frame_get_chance, textvariable=var_max).grid(row=1, column=1)
 
     # creating button and lable for calculating chance
-    ttk.Button(frame_get_chance, text="Calcualte chance", command=calc_chance).grid(
+    ttk.Button(frame_get_chance, text="Calculate chance", command=calc_chance).grid(
         row=2, column=0
     )
     ttk.Label(frame_get_chance, padding=4, textvariable=var_chance).grid(
