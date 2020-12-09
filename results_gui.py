@@ -154,9 +154,14 @@ def filter_table():
     # go through list of all columns
     for i in column_checkbox.ls:
         # check if the checkbox is pressed
-        if column_checkbox.checkboxes[i][0].get():
-            # formats the column name and adds it to col
-            col.append(i.replace(" ", "_"))
+        try:
+            if column_checkbox.checkboxes[i][0].get():
+                # formats the column name and adds it to col
+                col.append(i.replace(" ", "_"))
+        except:
+            col = column_checkbox.ls
+            for j in range(len(col)):
+                col[j] = col[j].replace(" ", "_")
 
     # returns the filtered df with only the selected columns
     return df_filt[col]
