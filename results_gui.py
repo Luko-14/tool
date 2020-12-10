@@ -183,14 +183,13 @@ def load_df_window():
     for column in tv["columns"]:
         tv.heading(column, text=column.replace("_", " "))
 
-    # turns the dataframe into an array
-    df_rows = df_table.to_numpy()
-    # add index to array
-    df_rows = np.insert(df_rows, 0, df_table.index.values, axis=1)
-
-    # turns array in list of lists
-    df_rows.tolist()
-    for row in df_rows:
+    # adds dataframe to treeview
+    for i in df_table.index.to_list():
+        # creates row for each index
+        row = df_table.loc[i].tolist()
+        # adds index to row
+        row.insert(0, i)
+        # add row to treeview
         tv.insert("", "end", values=row)
 
 
