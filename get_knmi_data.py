@@ -21,8 +21,8 @@ def get_data():
 
     try:
         resp = requests.post(url, data=params)
-    except Exception as e:
-        return e
+    except:
+        raise TimeoutError("KNMI")
 
     # check if data path exist
     if not os.path.isdir("./data"):

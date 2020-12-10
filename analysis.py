@@ -153,42 +153,63 @@ def results_file():
 def initialise_df():
     global df_aurum, df_old_usage, df_knmi, df_results, df_survey
 
-    knmi = get_knmi_data.get_data()
-
-    if knmi != 0:
-        # problemen met verbinding knmi
-        pass
-
-    # creating list with temp aurum dataframes
-    aurum_ls = []
-
-    for item in root.getvar(name="aurum"):
-        # add dataframe to list
-        aurum_ls.append(
-            pd.read_csv(
-                item,
-                sep=";",
-                low_memory=False,
-            )
-        )
-
-    # initializing aurum dataframe and removing temp dataframes
-    df_aurum = pd.concat(aurum_ls)
-    del aurum_ls
+    try:
+        get_knmi_data.get_data()
+    except Exception as e:
+        raise TimeoutError(e)
 
     # initializing the knmi dataframe
     df_knmi = pd.read_csv(
         "./data/knmi_data.csv", parse_dates=["Date"], index_col="Date"
     )
 
-    # initializing the results dataframe
-    df_results = pd.read_excel(root.getvar(name="pioneering"))
+    # opening and creating aurum data frame
+    try:
+        # creating list with temp aurum dataframes
+        aurum_ls = []
+        for item in root.getvar(name="aurum"):
+            # add dataframe to list
+            aurum_ls.append(
+                pd.read_csv(
+                    item,
+                    sep=";",
+                    low_memory=False,
+                )
+            )
+        # crating list of columns from first dataframe in aurum_ls
+        first_col_ls = aurum_ls[0].columns.tolist()
+        # checking if all data frames have simular columns
+        for i in aurum_ls:
+            i_ls = i.columns.tolist()
+            if "Measurement source type" not in i_ls:
+                raise ValueError("aurum")
+            if first_col_ls != i_ls:
+                raise ValueError("aurum")
 
-    df_survey = pd.read_excel(
-        root.getvar(name="survey"),
-        sheet_name="Bron data",
-        header=1,
-    )
+        # initializing aurum dataframe and removing temp dataframes
+        df_aurum = pd.concat(aurum_ls)
+        del aurum_ls
+    except:
+        raise ValueError("aurum")
+
+    # initializing the results dataframe
+    try:
+        df_results = pd.read_excel(root.getvar(name="pioneering"))
+
+        if "Datum inregelen" not in df_results.columns.tolist():
+            raise ValueError("pioneering")
+    except:
+        raise ValueError("pioneering")
+
+    # initializing the survey datafram
+    try:
+        df_survey = pd.read_excel(
+            root.getvar(name="survey"),
+            sheet_name="Bron data",
+            header=1,
+        )
+    except:
+        raise ValueError("survey")
 
     # creating dataframe of old usage
     df_old_usage = df_survey.copy()
@@ -427,7 +448,6 @@ def start_analysis():
     root.update()
 
     # creating dataframes and updating root
-    initialise_df()
     root.setvar(name="pb", value=5)
     root.update()
 
@@ -472,6 +492,18 @@ def new_analysis():
         and root.getvar(name="survey")
         and root.getvar(name="pioneering")
     ):
+        # initializing dataframes
+        try:
+            initialise_df()
+        except Exception as e:
+            messagebox.showerror(
+                title="Invalid file",
+                message='Please make sure the correct {} file is selected! \n For more info press "help".'.format(
+                    e
+                ),
+            )
+            return None
+
         # starting analysis
         start_analysis()
     else:

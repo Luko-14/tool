@@ -1,8 +1,7 @@
-a = 7
-b = a
-c = a
-b += 3
-c -= 4
-print(a)
-print(b)
-print(c)
+a = [1, 2, 3]
+b = [1, 2, 3]
+
+if a == b:
+    print("True")
+else:
+    print("False")
