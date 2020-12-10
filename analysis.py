@@ -485,7 +485,7 @@ def start_analysis():
 
 
 # creating a new analysis
-def new_analysis():
+def create_analysis():
     # checks if all the input is given
     if (
         root.getvar(name="aurum")
@@ -578,13 +578,158 @@ def remove_aurum_data(listbox_aurum):
     root.setvar(name="aurum", value=value)
 
 
+def radio_help(frame, help_var):
+
+    # set variables
+    width = 15
+
+    # draw and place radio buttons
+    ttk.Radiobutton(
+        frame,
+        variable=help_var,
+        text="Aurum",
+        value="./resources/help_csv/aurum.csv",
+        width=width,
+        command=df_to_tree,
+    ).place(anchor="nw")
+
+    ttk.Radiobutton(
+        frame,
+        variable=help_var,
+        text="Pioneering",
+        value="./resources/help_csv/pioneering.csv",
+        width=width,
+        command=df_to_tree,
+    ).place(x=10 * width, anchor="nw")
+
+    ttk.Radiobutton(
+        frame,
+        variable=help_var,
+        text="Survey",
+        value="./resources/help_csv/survey.csv",
+        width=width,
+        command=df_to_tree,
+    ).place(x=20 * width, anchor="nw")
+
+
+def df_to_tree():
+
+    tree.delete(*tree.get_children())
+
+    df_table = pd.read_csv(help_window.getvar(name="help"), sep=";")
+    df_table.fillna("", inplace=True)
+    # sets the columns of the df to columns of tv
+    col_ls = df_table.columns.tolist()
+    tree["column"] = col_ls
+    # shows the headers
+    tree["show"] = "headings"
+
+    # adds set column name as header
+    for column in tree["columns"]:
+        tree.heading(column, text=column.replace("_", " "))
+
+    # adds dataframe to treeview
+    for i in df_table.index.to_list():
+        # creates row for each index
+        row = df_table.loc[i].tolist()
+        # add row to treeview
+        tree.insert("", "end", values=row)
+
+
+def create_help_window():
+    # check if viewdata is True
+    if root.getvar(name="Help_Window") == 1:
+        return None
+
+    # set view_data var to true
+    root.setvar(name="View_Data", value=True)
+
+    # create new window
+    global help_window
+    help_window = tk.Toplevel(root)
+    help_window.geometry("1000x500")
+    help_window.title("Help")
+    help_window.iconbitmap("./resources/help.ico")
+
+    help_var_window = tk.StringVar(help_window, name="help")
+
+    radio_frame = ttk.Frame(help_window, padding=2)
+    table_frame = ttk.Frame(help_window, padding=4)
+
+    radio_frame.place(
+        relwidth=1,
+        height=35,
+    )
+    table_frame.place(
+        relwidth=1,
+        relheight=1,
+        height=-50,
+        # width=-scrol_width_window,
+        y=35,
+        # height=-button_height,
+    )
+
+    # creating and placing treeview for df_results
+    global tree
+    tree = ttk.Treeview(table_frame)
+
+    tree.place(relwidth=1, relheight=1, height=-15)
+
+    # creating scrollbars for treeview
+    treescrollx = ttk.Scrollbar(table_frame, orient="horizontal", command=tree.xview)
+
+    # configuring treeview
+    tree.configure(xscrollcommand=treescrollx.set)
+
+    treescrollx.place(
+        rely=1,
+        y=-15,
+        height=15,
+        relwidth=1,
+        width=-15,
+    )
+
+    # # adding data to treeview
+    # load_df_window()
+
+    radio_help(radio_frame, help_var_window)
+
+    # draw_window_calc_chance(frame_get_chance)
+    # # when delete window (cross top right) is pressed destroy window and set var to false
+    # window.protocol("WM_DELETE_WINDOW", close_window)
+
+
+def menu_bar():
+    # add menu bar on top
+    menubar = tk.Menu()
+
+    # add file menu
+    mb_file = tk.Menu(menubar, tearoff=False)
+
+    # add exit button
+    mb_file.add_command(label="Exit", command=root.destroy)
+
+    # add file to menu bar
+    menubar.add_cascade(label="File", menu=mb_file)
+
+    # add view data
+    menubar.add_cascade(label="Help", command=create_help_window)
+
+    # creating boolean and setting value for view data
+    tk.BooleanVar(root, name="Help_Window")
+    root.setvar(name="Help_Window", value=False)
+
+    # sets menubar
+    root.config(menu=menubar)
+
+
 # select parameters for new analysis
 def parameters_analysis(
     lbl_pioneering, lbl_survey, listbox_aurum, btn_back, name_entry
 ):
     clear_root()
 
-    root.geometry("360x600")
+    root.geometry("360x615")
 
     add_remove = ttk.Frame(root)
 
@@ -593,7 +738,7 @@ def parameters_analysis(
 
     btn_start_analysis = ttk.Button(
         root,
-        command=new_analysis,
+        command=create_analysis,
         text="START ANALYSIS",
         padding=8,
         style="my1.TButton",
@@ -678,18 +823,21 @@ def main():
     root = ThemedTk()
     root.get_themes()
     root.set_theme("breeze")
-    root.geometry("360x120")
+    root.geometry("360x135")
     root.title("Balancing Radiators Analysis")
     root.iconbitmap("./resources/tool_logo.ico")
 
+    # add menu bar
+    menu_bar()
+
     listbox_results = tk.Listbox(root)
 
-    resutls_list = os.listdir("./results")
+    results_list = os.listdir("./results")
 
     a = ttk.Style()
     a.configure("my1.TButton", font=("Sans", 14), foreground="#3daee9")
 
-    for result in resutls_list:
+    for result in results_list:
         listbox_results.insert("end", result)
 
     listbox_results.selection_set("end")
@@ -739,7 +887,7 @@ def main():
 
     btn_select_analysis = ttk.Button(
         root,
-        text="Open revious analysis",
+        text="Open previous analysis",
         command=lambda: select_analysis(listbox_results, btn_open_analysis, btn_back),
         padding=6,
     )

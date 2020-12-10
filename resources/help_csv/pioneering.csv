@@ -1,0 +1,7 @@
+﻿Postcode;Serienummer ;Heeft u stadsverwarming?;Heeft u vloerverwarming?;Gasmeterstand (m3);Wijze van inregelen;Datum inregelen
+1234AB;1234567;Nee;Nee;Slimme meter;Niet-regelbaar;dd-mm-yyyy
+;;Ja;Ja;Meterstand (12345,67);Voetventiel;
+;;;Ja, alleen in badkamer, keuken of andere kleine ruimte;;Regelbaar;
+;;;Ja, alleen in de badkamer, keuken of andere kleine ruimte;;Thermostaatknoppen;
+;;;;;Niet-regelbaar(X) Regelbaar (Y) Voetventiel (Z);
+;;;;;-;

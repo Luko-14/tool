@@ -1,0 +1,8 @@
+Serialnumber;Postal code;Measurement source type;Measurement date;Measurement time;Unit;Measurement value;Correction;House type;Residents;Energy label;Solar panels
+1234567;1234AB;gas;dd-mm-yyyy;hh:mm:ss;m3;1,23;;detachedHouse;amount(1,2,3,...);a-g;amount(0,1,2,3,...)
+;;electricity;;;kWh;;;detachedHouse;;;
+;;;;;;;;cornerHouse;;;
+;;;;;;;;semiDetachedHouse;;;
+;;;;;;;;rowHouse;;;
+;;;;;;;;cornerHouse;;;
+
