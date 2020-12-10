@@ -49,7 +49,7 @@ def format_month(date):
 
 
 # creating a new analysis
-def analyse_houes(i, average_dates, comp_dates):
+def analyze_house(i, average_dates, comp_dates):
     Serial_number = i
 
     # filter df for serial number
@@ -408,8 +408,10 @@ def start_analysis():
     clear_root()
 
     # placing wait lable
-    ttk.Label(root, text="Analysing data", font=("Sans", "10", "bold")).pack()
-    ttk.Label(root, text="Please wait...").pack()
+    ttk.Label(
+        root, padding=(0, 4, 0, 2), text="Analyzing data", font=("Sans", "10", "bold")
+    ).pack()
+    ttk.Label(root, padding=2, text="Please wait...").pack()
     root.geometry("360x100")
 
     # creating and placing progressbar
@@ -444,7 +446,7 @@ def start_analysis():
 
     # loop trough each serial number
     for i in df_results.index:
-        analyse_houes(i, average_dates, comp_dates)
+        analyze_house(i, average_dates, comp_dates)
         # updating progress bar
         root.setvar(name="pb", value=(10 + 90 / len(df_results.index) * j))
         root.update()
@@ -475,7 +477,7 @@ def new_analysis():
     else:
         messagebox.showwarning(
             title="Input warning",
-            message="Make sure to submit all files",
+            message="Not all required files are selected",
         )
 
 
@@ -568,21 +570,21 @@ def parameters_analysis(
     btn_select_pioneering = ttk.Button(
         root,
         padding=6,
-        text="Select file with the pioneering data",
+        text="Select pioneering data file",
         command=lambda: pioneering_data(lbl_pioneering),
     )
 
     btn_select_survey = ttk.Button(
         root,
         padding=6,
-        text="Select file with the survey data",
+        text="Select survey data file",
         command=lambda: survey_data(lbl_survey),
     )
 
     btn_select_aurom = ttk.Button(
         add_remove,
         padding=6,
-        text="Select files with aurum data",
+        text="Select aurum data file(s)",
         command=lambda: aurum_data(listbox_aurum),
     )
 
@@ -645,7 +647,7 @@ def main():
     root.get_themes()
     root.set_theme("breeze")
     root.geometry("360x120")
-    root.title("Welcome to the analysis")
+    root.title("Balancing Radiators Analysis")
     root.iconbitmap("./resources/tool_logo.ico")
 
     listbox_results = tk.Listbox(root)
@@ -681,7 +683,7 @@ def main():
 
     btn_open_analysis = ttk.Button(
         root,
-        text="Open selected analysis",
+        text="Open analysis",
         command=lambda: open_results(listbox_results),
         style="my1.TButton",
         padding=6,
@@ -696,7 +698,7 @@ def main():
 
     btn_new_analysys = ttk.Button(
         root,
-        text="Start new Analysis",
+        text="Start new analysis",
         command=lambda: parameters_analysis(
             lbl_pioneering, lbl_survey, listbox_aurum, btn_back, name_entry
         ),
@@ -705,7 +707,7 @@ def main():
 
     btn_select_analysis = ttk.Button(
         root,
-        text="Open previous Analysis",
+        text="Open revious analysis",
         command=lambda: select_analysis(listbox_results, btn_open_analysis, btn_back),
         padding=6,
     )

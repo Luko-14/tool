@@ -221,7 +221,7 @@ def calc_chance():
         upperbound = window.getvar(name="Max")
     except:
         text = (
-            "Please make sure to enter a value in \n the minimum and maximun chance.",
+            "Please make sure to enter a value in \n the minimum and maximum chance.",
         )
         input_error(text)
         return None
@@ -237,7 +237,7 @@ def calc_chance():
 
     # checks if lowerbound is smaller than upperbound
     if lowerbound > upperbound:
-        text = "Make sure the lowerbound is smaller than the upperbound"
+        text = "Make sure lowerbound < upperbound"
         input_error(text)
         return None
 
@@ -262,13 +262,13 @@ def draw_window_calc_chance(frame_get_chance):
     var_chance = tk.StringVar(window, name="Chance")
 
     # creating and placing lable and entry min / max
-    ttk.Label(frame_get_chance, padding=4, text="Minimum gas reduciton").grid(
+    ttk.Label(frame_get_chance, padding=4, text="Minimum gas reduction").grid(
         row=0, column=0, sticky="w"
     )
 
     ttk.Entry(frame_get_chance, textvariable=var_min).grid(row=0, column=1)
 
-    ttk.Label(frame_get_chance, padding=4, text="Maximum gas reduciton").grid(
+    ttk.Label(frame_get_chance, padding=4, text="Maximum gas reduction").grid(
         row=1, column=0, sticky="w"
     )
 
@@ -477,14 +477,14 @@ def filter_data():
         if isnan(mean) or isnan(std):
             messagebox.showerror(
                 title="Data error",
-                message="With the current filters the dataframe has no results. \nTry a different filter!",
+                message="With the currently selected filters the dataframe has no results. \nTry a different filter!",
             )
             return 0
 
     elif selected_plot.get() == "bar" and amount_of_houses == 0:
         messagebox.showerror(
             title="Data error",
-            message="With the current filters the dataframe has no results. \nTry a different filter!",
+            message="With the currently selected filters the dataframe has no results. \nTry a different filter!",
         )
         return 0
 
@@ -688,7 +688,11 @@ def plot_bar(plots):
 
     # plot x and y values
     ax1.bar(
-        x_indexes - width, y_axis2, width=width, color="red", label="Old usage (m^3)"
+        x_indexes - width,
+        y_axis2,
+        width=width,
+        color="red",
+        label="Previous usage (m^3)",
     )
 
     ax1.bar(x_indexes, y_axis1, width=width, color="blue", label="New usage (m^3)")
@@ -902,7 +906,7 @@ def results_gui(df):
     root.get_themes()
     root.set_theme("breeze")
     root.geometry("1000x500")
-    root.title("Welcome to the analysis")
+    root.title("Balancing Radiators Analysis")
     root.iconbitmap("./resources/tool_logo.ico")
 
     # changeable parameters
