@@ -100,7 +100,7 @@ def calc_old_usage(df_knmi, seq_weighted_days, old_seq, df_old_usage, av_use):
         try:
             tot_old_usage += df_old_usage[date]
         except Exception:
-            return False
+            pass
 
     # sequince is in same year
     elif begin_old_seq.month < end_old_seq.month:
@@ -115,8 +115,9 @@ def calc_old_usage(df_knmi, seq_weighted_days, old_seq, df_old_usage, av_use):
             # gets old usage for that month
             try:
                 tot_old_usage += df_old_usage[date]
-            except Exception:
-                return False
+            except:
+                tot_old_usage = 0
+                pass
 
     # sequince if different years
     elif begin_old_seq.month > end_old_seq.month:
@@ -135,11 +136,12 @@ def calc_old_usage(df_knmi, seq_weighted_days, old_seq, df_old_usage, av_use):
             # gets old usage for that month
             try:
                 tot_old_usage += df_old_usage[date]
-            except Exception:
-                return False
+            except:
+                tot_old_usage = 0
+                pass
 
     # checks if tot_old_usage is a not number
-    if isnan(tot_old_usage):
+    if tot_old_usage == 0:
         # sets total gas usage to yearly gas usage
         tot_old_usage = df_old_usage["Yearly_gas_usage"]
         # checks if tot_old_usage is not a number
