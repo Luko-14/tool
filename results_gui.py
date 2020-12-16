@@ -123,7 +123,7 @@ class Button:
         self.button = ttk.Button(
             frame_buttons,
             text=self.name.replace("_", " "),
-            width=15,
+            width=17,
             command=(lambda: button_click(self)),
         )
 
@@ -862,6 +862,12 @@ def draw_buttons(df_results, frame_buttons):
         "Energy_label",
         "Postal_code",
         "Gasmeter_type",
+        "District_heating",
+        "Underfloor_heating",
+        "Construction_year",
+        "Influence_on_heating",
+        "Change_number_of_residents",
+        "Change_in_resident_behaviour",
     ]
     # column and row number
     j = 0
@@ -914,7 +920,7 @@ def results_gui(df):
     p = 12
     scrol_width = 200
     button_height = 120
-    button_width = 510
+    button_width = 600
     select_plot_width = 100
     select_plot_height = 100
     scrol_width_window = 275
