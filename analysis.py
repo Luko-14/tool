@@ -656,17 +656,23 @@ def create_help_window():
     radio_frame = ttk.Frame(help_window, padding=2)
     table_frame = ttk.Frame(help_window, padding=4)
 
+    ttk.Label(
+        help_window,
+        padding=2,
+        text="Choose the file you want help with:",
+        font=("Sans", "10", "bold"),
+    ).pack(fill=tk.BOTH)
+
     radio_frame.place(
         relwidth=1,
+        y=20,
         height=35,
     )
     table_frame.place(
         relwidth=1,
         relheight=1,
-        height=-50,
-        # width=-scrol_width_window,
-        y=35,
-        # height=-button_height,
+        height=-65,
+        y=50,
     )
 
     # creating and placing treeview for df_results
@@ -690,13 +696,7 @@ def create_help_window():
     )
 
     # # adding data to treeview
-    # load_df_window()
-
     radio_help(radio_frame, help_var_window)
-
-    # draw_window_calc_chance(frame_get_chance)
-    # # when delete window (cross top right) is pressed destroy window and set var to false
-    # window.protocol("WM_DELETE_WINDOW", close_window)
 
 
 def menu_bar():

@@ -498,8 +498,6 @@ def menu_bar():
     mb_file = tk.Menu(menubar, tearoff=False)
     # add new analysis button
     mb_file.add_command(label="New Analysis", command=new_analysis)
-    # add change results file button
-    # mb_file.add_command(label="Change results file", command=lambda: print("Goodbye"))
     # adding separator
     mb_file.add_separator()
     # add exit button
