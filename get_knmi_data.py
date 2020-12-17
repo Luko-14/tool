@@ -162,9 +162,11 @@ def compare_dates(RANGE, seq, df):
                     # if new sequence is longest sequence, save date
                     if i > longest_sequence:
                         longest_sequence = i - 1
-                        end_date = date + np.timedelta64(longest_sequence, "D")
-                        sim_date = check_date
-                        sim_end_date = sim_date + np.timedelta64(longest_sequence, "D")
+                        end_date = date + np.timedelta64((longest_sequence + 1), "D")
+                        sim_date = check_date + np.timedelta64(1, "h")
+                        sim_end_date = sim_date + np.timedelta64(
+                            (24 * longest_sequence + 23), "h"
+                        )
 
                     break
 
@@ -172,11 +174,17 @@ def compare_dates(RANGE, seq, df):
         if (longest_sequence + 1) >= seq:
             if not (longest_sequence + 1) in comp_date_seq.keys():
                 comp_date_seq[(longest_sequence + 1)] = [
-                    ((date, end_date), (sim_date, sim_end_date))
+                    (
+                        ((date + np.timedelta64(1, "h")), end_date),
+                        (sim_date, sim_end_date),
+                    )
                 ]
             else:
                 comp_date_seq[(longest_sequence + 1)].append(
-                    ((date, end_date), (sim_date, sim_end_date))
+                    (
+                        ((date + np.timedelta64(1, "h")), end_date),
+                        (sim_date, sim_end_date),
+                    )
                 )
 
         date = date + np.timedelta64(1, "D")
@@ -283,8 +291,8 @@ def get_seq_weighted_dates(seq, df):
                 # check if new sequence is the longest
                 if j > longest_sequence:
                     longest_sequence = j - 1
-                    date = df1.index[i]
-                    end_date = df1.index[i + longest_sequence]
+                    date = df1.index[i] + np.timedelta64(1, "h")
+                    end_date = df1.index[i + longest_sequence] + np.timedelta64(1, "D")
 
                 # adds j to i
                 i += j

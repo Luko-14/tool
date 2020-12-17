@@ -7,10 +7,13 @@ from math import isnan
 
 # creating global variables for errors
 global flow_dev_min
+# maximum negative deviation of flow meter
 flow_dev_min = (100 - 0.17) / 100
 global flow_dev_max
+# maximum positive deviation of flow meter
 flow_dev_max = (100 + 0.92) / 100
 global knmi_deviation
+# deviation of the knmi measuring equipemnt
 knmi_deviation = 1
 
 # filter dataframe for serial number gas and a valvue
@@ -105,7 +108,7 @@ def calc_old_usage(df_knmi, seq_weighted_days, old_seq, df_old_usage, av_use):
     # sequince is in same year
     elif begin_old_seq.month < end_old_seq.month:
         # calculates amount of months in seq
-        months = begin_old_seq.month - end_old_seq.month
+        months = end_old_seq.month - begin_old_seq.month + 1
         # get usage for each month
         for month in range(months):
             # add month to startmonth
@@ -117,18 +120,18 @@ def calc_old_usage(df_knmi, seq_weighted_days, old_seq, df_old_usage, av_use):
                 tot_old_usage += df_old_usage[date]
             except:
                 tot_old_usage = 0
-                pass
+                continue
 
-    # sequince if different years
+    # sequence is in different years
     elif begin_old_seq.month > end_old_seq.month:
         # calculates amount of months in seq
-        months = end_old_seq.month - begin_old_seq.month
+        months = 13 - begin_old_seq.month + end_old_seq.month
         # get usage for each month
         for month in range(months):
             # add month to startmonth
             month = begin_old_seq.month + month
             # creats year variable. if month > 12 adds one year
-            year = begin_old_seq.year + month // 12
+            year = begin_old_seq.year + (month - 1) // 12
             # sets month to int between 1 and 12
             month = 1 + (month - 1) % 12
             # sets date to string (m-year)
@@ -138,7 +141,7 @@ def calc_old_usage(df_knmi, seq_weighted_days, old_seq, df_old_usage, av_use):
                 tot_old_usage += df_old_usage[date]
             except:
                 tot_old_usage = 0
-                pass
+                continue
 
     # checks if tot_old_usage is a not number
     if tot_old_usage == 0:
@@ -222,7 +225,7 @@ def gas_reduction(df_snr, df_knmi, dates, av_use, old_usage_snr):
             if df1.empty:
                 continue
 
-            # cretes list weighted degree days
+            # creates list weighted degree days (av,min,max)
             sum_weighted = []
 
             sum_weighted.append(
@@ -231,26 +234,27 @@ def gas_reduction(df_snr, df_knmi, dates, av_use, old_usage_snr):
 
             sum_weighted.append(
                 df_knmi[new_seq[0] : new_seq[1]]["weight_degr_days"].sum()
-                - df_knmi[new_seq[0] : new_seq[1]].index.size
+                - df_knmi[new_seq[0] : new_seq[1]].index.size * knmi_deviation
             )
 
             sum_weighted.append(
                 df_knmi[new_seq[0] : new_seq[1]]["weight_degr_days"].sum()
-                + df_knmi[new_seq[0] : new_seq[1]].index.size
+                + df_knmi[new_seq[0] : new_seq[1]].index.size * knmi_deviation
             )
 
             # calculates the number of days
             days = df1.index.size / 24
 
-            # create list of new gas usage
+            # create list of new gas usage (av,min,max)
             new_usage = []
             # calculates average new gas use
             new_usage.append(df1.sum() - days * av_use[0])
-            # calculates min new gas use
-            new_usage.append(df1.sum() * flow_dev_min * aurum_err - days * av_use[2])
+            # calculates min new gas use ()
+            new_usage.append(df1.sum() / flow_dev_max * aurum_err - days * av_use[2])
             # calculates max new gas use
-            new_usage.append(df1.sum() * flow_dev_max / aurum_err - days * av_use[1])
+            new_usage.append(df1.sum() / flow_dev_min / aurum_err - days * av_use[1])
 
+            # calculating the old usage
             old_usage = calc_old_usage(
                 df_knmi, sum_weighted, old_seq, old_usage_snr, av_use
             )
@@ -285,7 +289,7 @@ def gas_reduction(df_snr, df_knmi, dates, av_use, old_usage_snr):
                 total_new_usage[2] += new_usage[2]
 
     # checks if list is not empty
-    if av_ls:
+    if av_ls and min_ls and max_ls:
         # creating average list
         total_average = []
         # adding av min and max to total average

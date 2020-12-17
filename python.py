@@ -1,7 +1,2 @@
-a = [1, 2, 3]
-b = [1, 2, 3]
-
-if a == b:
-    print("True")
-else:
-    print("False")
+for i in range(1):
+    print(i)
