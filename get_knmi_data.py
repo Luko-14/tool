@@ -56,7 +56,7 @@ def get_data():
                 temp = int(data[2])
 
                 # calculate weighted degree days
-                if temp >= 155:
+                if temp >= 180:
                     weight_degr_days = 0
                 elif month == 3 or month == 10:
                     weight_degr_days = 180 - temp

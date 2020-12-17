@@ -304,7 +304,7 @@ def window_view_data():
     frame_av_max_min = ttk.Frame(window, padding=p)
 
     # creating scrollable column view
-    canvas_scroll_win = tk.Canvas(frame_select_col)
+    canvas_scroll_win = tk.Canvas(frame_select_col, highlightthickness=0)
 
     # create frame for checkboxes
     frame_scroll_items_win = ttk.Frame(canvas_scroll_win, padding=10)
@@ -864,8 +864,8 @@ def draw_buttons(df_results, frame_buttons):
         "Underfloor_heating",
         "Construction_year",
         "Influence_on_heating",
-        "Change_number_of_residents",
-        "Change_in_resident_behaviour",
+        "Change_in_residents",
+        "Change_in_behaviour",
     ]
     # column and row number
     j = 0
@@ -976,7 +976,7 @@ def results_gui(df):
 
     # create canvas scrollbar
     global canvas_scroll
-    canvas_scroll = tk.Canvas(frame_scroll)
+    canvas_scroll = tk.Canvas(frame_scroll, highlightthickness=0)
 
     # create scrollbar
     scrollbar = ttk.Scrollbar(

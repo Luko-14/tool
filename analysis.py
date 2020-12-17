@@ -113,12 +113,8 @@ def analyze_house(i, average_dates, comp_dates):
     df_results["Construction_year"][i] = df_survey["Construction_year"][i]
     df_results["Residence_time_1year"][i] = df_survey["Residence_time_1year"][i]
     df_results["Influence_on_heating"][i] = df_survey["Influence_on_heating"][i]
-    df_results["Change_number_of_residents"][i] = df_survey[
-        "Change_number_of_residents"
-    ][i]
-    df_results["Change_in_resident_behaviour"][i] = df_survey[
-        "Change_in_resident_behaviour"
-    ][i]
+    df_results["Change_in_residents"][i] = df_survey["Change_in_residents"][i]
+    df_results["Change_in_behaviour"][i] = df_survey["Change_in_behaviour"][i]
 
 
 # creating a results file
@@ -274,8 +270,8 @@ def initialise_df():
             "Bouwjaar": "Construction_year",
             "Woning duur": "Residence_time_1year",
             "Invloed op verwarming": "Influence_on_heating",
-            "Verandering van de grotte van huishouden": "Change_number_of_residents",
-            "Verandering in bewoningsgedrag": "Change_in_resident_behaviour",
+            "Verandering van de grotte van huishouden": "Change_in_residents",
+            "Verandering in bewoningsgedrag": "Change_in_behaviour",
         },
         inplace=True,
     )
@@ -371,8 +367,8 @@ def initialise_df():
             "Construction_year",
             "Residence_time_1year",
             "Influence_on_heating",
-            "Change_number_of_residents",
-            "Change_in_resident_behaviour",
+            "Change_in_residents",
+            "Change_in_behaviour",
             "Av_old_usage",
             "Min_old_usage",
             "Max_old_usage",
@@ -392,7 +388,8 @@ def initialise_df():
 # removes all childeren in root
 def clear_root():
     for childeren in root.winfo_children():
-        childeren.pack_forget()
+        if type(childeren) != tk.Toplevel:
+            childeren.pack_forget()
 
 
 # creating frame for selecting old results
