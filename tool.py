@@ -19,14 +19,17 @@ knmi_deviation = 1
 # filter dataframe for serial number gas and a valvue
 def filter_df(data_frame, serial_number):
 
+    # make deep copy of df aurum
     df = data_frame.copy()
 
+    # create filter
     filt = (
         (df["Serialnumber"] == serial_number)
         & (df["Measurement source type"] == "gas")
         & (df["Measurement value"] != None)
     )
 
+    # apply filter
     df = df[filt]
 
     # changing datatype from string to time
@@ -38,10 +41,6 @@ def filter_df(data_frame, serial_number):
 
     # creating new collumn with date and time combined
     df["Date_time"] = df["Measurement date"] + df["Measurement time"]
-
-    # change datatype of measurement valvue to float
-    df["Measurement value"] = df["Measurement value"].str.replace(",", ".")
-    df["Measurement value"] = df["Measurement value"].astype(float)
 
     # sort by date_time and drop unused colums
     df = df.set_index(df["Date_time"])
@@ -101,7 +100,7 @@ def calc_old_usage(df_knmi, seq_weighted_days, old_seq, df_old_usage, av_use):
         date = str(begin_old_seq.month) + "-" + str(begin_old_seq.year)
         # gets old usage for that month
         try:
-            tot_old_usage += df_old_usage[date]
+            tot_old_usage += float(df_old_usage[date])
         except Exception:
             pass
 
@@ -117,7 +116,7 @@ def calc_old_usage(df_knmi, seq_weighted_days, old_seq, df_old_usage, av_use):
             date = str(month) + "-" + str(begin_old_seq.year)
             # gets old usage for that month
             try:
-                tot_old_usage += df_old_usage[date]
+                tot_old_usage += float(df_old_usage[date])
             except:
                 tot_old_usage = 0
                 continue
@@ -138,7 +137,7 @@ def calc_old_usage(df_knmi, seq_weighted_days, old_seq, df_old_usage, av_use):
             date = str(month) + "-" + str(year)
             # gets old usage for that month
             try:
-                tot_old_usage += df_old_usage[date]
+                tot_old_usage += float(df_old_usage[date])
             except:
                 tot_old_usage = 0
                 continue
@@ -148,6 +147,11 @@ def calc_old_usage(df_knmi, seq_weighted_days, old_seq, df_old_usage, av_use):
         # sets total gas usage to yearly gas usage
         tot_old_usage = df_old_usage["Yearly_gas_usage"]
         # checks if tot_old_usage is not a number
+        try:
+            tot_old_usage = float(tot_old_usage)
+        except:
+            return False
+
         if isnan(tot_old_usage):
             # no usable values in df_old_usage data frame
             return False

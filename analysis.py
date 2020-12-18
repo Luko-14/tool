@@ -184,11 +184,18 @@ def initialise_df():
 
         # initializing aurum dataframe and removing temp dataframes
         df_aurum = pd.concat(aurum_ls)
-        del aurum_ls
+        # del aurum_ls
     except:
         raise ValueError("aurum")
 
-    # initializing the results dataframe
+    # converting string to float
+    try:
+        df_aurum["Measurement value"] = (
+            df_aurum["Measurement value"].str.replace(",", ".").astype(float)
+        )
+    except:
+        raise NameError("Aurum data corrupted")
+
     try:
         df_results = pd.read_excel(root.getvar(name="pioneering"))
 
@@ -492,10 +499,18 @@ def create_analysis():
         # initializing dataframes
         try:
             initialise_df()
-        except Exception as e:
+        except ValueError as e:
             messagebox.showerror(
                 title="Invalid file",
                 message='Please make sure the correct {} file is selected! \n For more info press "help".'.format(
+                    e
+                ),
+            )
+            return None
+        except NameError as e:
+            messagebox.showerror(
+                title="Data Corrupted",
+                message="The aurum data is corrupted. \n Try a different data set!".format(
                     e
                 ),
             )
