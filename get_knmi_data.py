@@ -101,10 +101,9 @@ def df_filt_dates(df, date, RANGE, stop_date):
 
 
 # comparing dates
-def compare_dates(RANGE, seq, df):
+def compare_dates(RANGE, seq, df, BEGIN_DATE):
 
     # y-m-d first date of aurum data (start of experiment)
-    BEGIN_DATE = np.datetime64(pd.to_datetime("2020-8-1"))
     set_date = BEGIN_DATE
 
     comp_date_seq = {}
@@ -247,10 +246,7 @@ def remove_overlap(seq):
 
 
 # get dict of a sequence of non weighted dates
-def get_seq_weighted_dates(seq, df):
-
-    # y-m-d first date of aurum data (start of experiment)
-    BEGIN_DATE = np.datetime64(pd.to_datetime("2020-8-1"))
+def get_seq_weighted_dates(seq, df, BEGIN_DATE):
 
     # creates list of where weighted degree days = 0
     comp_date_seq = {}
@@ -261,6 +257,8 @@ def get_seq_weighted_dates(seq, df):
     df1 = df.loc[filt]
     df1 = df1[BEGIN_DATE:]
 
+    if df1.empty:
+        return None
     # creates check day index variable
     i = 0
 

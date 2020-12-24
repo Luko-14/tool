@@ -4,6 +4,7 @@ from tkinter import messagebox, ttk, filedialog
 
 import pandas as pd
 from ttkthemes.themed_tk import ThemedTk
+import numpy as np
 
 import get_knmi_data
 import tool
@@ -165,13 +166,18 @@ def initialise_df():
         aurum_ls = []
         for item in root.getvar(name="aurum"):
             # add dataframe to list
-            aurum_ls.append(
-                pd.read_csv(
-                    item,
-                    sep=";",
-                    low_memory=False,
+            try:
+                ds = pd.read_csv(item, sep=";", low_memory=False)
+
+                # converting string to float
+                ds["Measurement value"] = (
+                    ds["Measurement value"].str.replace(",", ".").astype(float)
                 )
-            )
+            except:
+                raise NameError(item.split("/")[-1])
+
+            aurum_ls.append(ds)
+
         # crating list of columns from first dataframe in aurum_ls
         first_col_ls = aurum_ls[0].columns.tolist()
         # checking if all data frames have simular columns
@@ -185,16 +191,10 @@ def initialise_df():
         # initializing aurum dataframe and removing temp dataframes
         df_aurum = pd.concat(aurum_ls)
         # del aurum_ls
+    except NameError as e:
+        raise NameError(e)
     except:
         raise ValueError("aurum")
-
-    # converting string to float
-    try:
-        df_aurum["Measurement value"] = (
-            df_aurum["Measurement value"].str.replace(",", ".").astype(float)
-        )
-    except:
-        raise NameError("Aurum data corrupted")
 
     try:
         df_results = pd.read_excel(root.getvar(name="pioneering"))
@@ -455,13 +455,27 @@ def start_analysis():
     root.setvar(name="pb", value=5)
     root.update()
 
+    # get first date of aurum data
+    begin_date = np.datetime64(
+        pd.to_datetime(df_aurum.iloc[0]["Measurement date"], format="%d-%m-%Y")
+    )
+
     # get dict of average dates and update root
-    average_dates = get_knmi_data.get_seq_weighted_dates(4, df_knmi)
+    average_dates = get_knmi_data.get_seq_weighted_dates(4, df_knmi, begin_date)
+    if average_dates == None:
+        messagebox.showerror(
+            title="Data error",
+            message="Not enough data to create a baseline.\n Add more aurum data!",
+        )
+        root.destroy()
+        main()
+        return
+
     root.setvar(name="pb", value=7.5)
     root.update()
 
     # get dict of comp dates and update root
-    comp_dates = get_knmi_data.compare_dates(5, 3, df_knmi)
+    comp_dates = get_knmi_data.compare_dates(5, 3, df_knmi, begin_date)
     root.setvar(name="pb", value=10)
     root.update()
 
@@ -510,7 +524,7 @@ def create_analysis():
         except NameError as e:
             messagebox.showerror(
                 title="Data Corrupted",
-                message="The aurum data is corrupted. \n Try a different data set!".format(
+                message='The aurum data in file "{}" corrupted. \n Try a different data set!'.format(
                     e
                 ),
             )
