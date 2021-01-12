@@ -94,8 +94,6 @@ class Checkboxes:
             # changes state of all checkboxes to true
             for i in self.checkboxes:
                 self.root.setvar(name=self.name + str(i), value=True)
-            # updates the graph
-            checkbox_click()
         else:
             # changes state of all checkboxes to false
             for i in self.checkboxes:
@@ -127,6 +125,13 @@ class Button:
             width=17,
             command=(lambda: button_click(self)),
         )
+
+
+def clear_av_min_max():
+    # remove each child in
+    for children in frame_av_min_max.winfo_children():
+        if type(children) != tk.Toplevel:
+            children.pack_forget()
 
 
 def checkbox_click():
@@ -317,13 +322,13 @@ def window_view_data():
 
     frame_av_max_min.place(
         x=scrol_width_window,
-        y=15,
-        height=button_height - 15,
-        width=button_height,
+        y=5,
+        height=127,
+        width=130,
     )
 
     frame_get_chance.place(
-        x=scrol_width_window + button_height,
+        x=scrol_width_window + 130,
         height=button_height,
         relwidth=1,
         width=-scrol_width_window - button_height,
@@ -518,13 +523,14 @@ def menu_bar():
 def draw_select_plot(frame_select_plot):
 
     # create variables
-    width = 70
-    height = 30
+    width = 80
 
     # create plot variable
     global selected_plot
     selected_plot = tk.StringVar(root, name="plot", value="bellcurve")
 
+    #
+    ttk.Label(frame_select_plot, text="Select chart type").pack(anchor="w")
     # create radio buttons
     ttk.Radiobutton(
         frame_select_plot,
@@ -533,16 +539,34 @@ def draw_select_plot(frame_select_plot):
         value="bellcurve",
         width=width,
         command=filter_data,
-    ).place(rely=0.5, y=-height, anchor="w")
+    ).pack(anchor="w")
 
     ttk.Radiobutton(
         frame_select_plot,
         variable=selected_plot,
-        text="bar graph",
+        text="bar reduction",
+        value="bar red",
+        width=width,
+        command=filter_data,
+    ).pack(anchor="w")
+
+    ttk.Radiobutton(
+        frame_select_plot,
+        variable=selected_plot,
+        text="bar normalized",
         value="bar",
         width=width,
         command=filter_data,
-    ).place(rely=0.5, anchor="w")
+    ).pack(anchor="w")
+
+    ttk.Radiobutton(
+        frame_select_plot,
+        variable=selected_plot,
+        text="bar sequence",
+        value="bar conf",
+        width=width,
+        command=filter_data,
+    ).pack(anchor="w")
 
     # center the buttons
     frame_select_plot.grid_rowconfigure(0)
@@ -551,7 +575,9 @@ def draw_select_plot(frame_select_plot):
 def draw_radio_av_min_max(frame):
     # set variables
     width = 10
-    height = 30
+
+    # adding lable
+    ttk.Label(frame, text="Chart settings").pack(anchor="w")
 
     # draw and place radio buttons
     ttk.Radiobutton(
@@ -561,31 +587,30 @@ def draw_radio_av_min_max(frame):
         value="Av",
         width=width,
         command=av_min_max_click,
-    ).place(anchor="w")
+    ).pack(anchor="nw")
 
     ttk.Radiobutton(
         frame,
         variable=selected_av_min_max,
-        text="Minimum",
+        text="Worst case",
         value="Min",
         width=width,
         command=av_min_max_click,
-    ).place(y=height, anchor="w")
+    ).pack(anchor="nw")
 
     ttk.Radiobutton(
         frame,
         variable=selected_av_min_max,
-        text="Maximum",
+        text="Best case",
         value="Max",
         width=width,
         command=av_min_max_click,
-    ).place(y=2 * height, anchor="w")
+    ).pack(anchor="nw")
 
 
 def plot_bellcurve(plots):
     # colors
-    std2_color = "orange"
-    std1_color = "red"
+    std2_color = "Purple"
 
     # creates x-axis values
     global x_axis
@@ -596,8 +621,9 @@ def plot_bellcurve(plots):
 
     # add plot
     ax1 = plots.add_subplot()
+
     # plot x and y values
-    ax1.plot(x_axis, y_axis)
+    ax1.plot(x_axis, y_axis, color="black")
 
     # set title and lables
     ax1.set_title("Bellcurve gas reduction")
@@ -629,7 +655,7 @@ def plot_bellcurve(plots):
 
     # fill regions
     ax1.fill_between(x_fil1, y_fil1, alpha=0.25, color=std2_color)
-    ax1.fill_between(x_fil2, y_fil2, alpha=0.25, color=std1_color, label="68.2%")
+    ax1.fill_between(x_fil2, y_fil2, alpha=0.5, color=std2_color, label="68.2%")
     ax1.fill_between(x_fil3, y_fil3, alpha=0.25, color=std2_color, label="95.4%")
 
     # set x and y axis limits
@@ -654,6 +680,11 @@ def plot_bar(plots):
     y_axis1 = df_filt["Av_new_usage"].tolist()
     y_axis2 = df_filt["Av_old_usage"].tolist()
 
+    # calculate the average usage and sets to y_axis values
+    y_axis4 = df_filt["Av_use"].tolist()
+    for i in range(len(y_axis4)):
+        y_axis4[i] = 365 * y_axis4[i]
+
     # creating list of min and max old and new usage
     ls_min_new = df_filt["Min_new_usage"].tolist()
     ls_max_new = df_filt["Max_new_usage"].tolist()
@@ -667,11 +698,17 @@ def plot_bar(plots):
     er_max_axis2 = df_filt["Max_old_usage"].tolist()
 
     for i in range(len(x_axis)):
-        er_min_axis1[i] -= ls_min_new[i]
-        er_max_axis1[i] -= y_axis1[i]
+        # creating error bars
+        er_min_axis1[i] -= ls_min_new[i] + y_axis4[i]
+        er_max_axis1[i] -= y_axis1[i] + y_axis4[i]
 
-        er_min_axis2[i] -= ls_min_old[i]
-        er_max_axis2[i] -= y_axis2[i]
+        # creating error bars
+        er_min_axis2[i] -= ls_min_old[i] + y_axis4[i]
+        er_max_axis2[i] -= y_axis2[i] + y_axis4[i]
+
+        # adding average use to total use
+        y_axis1[i] += y_axis4[i]
+        y_axis2[i] += y_axis4[i]
 
     # creating money saved axis
     y_axis3 = []
@@ -691,14 +728,32 @@ def plot_bar(plots):
         x_indexes - width,
         y_axis2,
         width=width,
-        color="red",
-        label="Previous usage (m^3)",
+        color="#ED254E",
+        label="Gas usage before balancing (m³)",
     )
 
-    ax1.bar(x_indexes, y_axis1, width=width, color="blue", label="New usage (m^3)")
+    ax1.bar(
+        x_indexes,
+        y_axis1,
+        width=width,
+        color="#3E7CB1",
+        label="Gas usage after balancing (m³)",
+    )
 
     ax1.bar(
-        x_indexes + width, y_axis3, width=width, color="green", label="Money saved (€)"
+        x_indexes + width,
+        y_axis3,
+        width=width,
+        color="green",
+        label="Cost reduction (€)",
+    )
+
+    ax1.bar(
+        x_indexes - 0.5 * width,
+        y_axis4,
+        width=2 * width,
+        color="#FFAE03",
+        label="Non-heating usage (m³)",
     )
 
     # plotting the errorbars
@@ -730,24 +785,103 @@ def plot_bar(plots):
     )
     # set title and lables
     ax1.set_title("Gas usage")
-    ax1.set_xlabel("Serial number")
+    ax1.set_xlabel("Houses")
 
     # create boundaries
     ax1.set_ylim(0)
     ax1.set_xlim(-0.5)
 
     # add legend
-    ax1.legend()
+    ax1.legend(loc=1)
+
+    # add grid
+    ax1.yaxis.grid(color="gray")
+    ax1.set_axisbelow(True)
+
     # set ticks
     plt.setp(ax1, xticks=x_indexes, xticklabels=x_axis)
 
     return (plots, ax1)
 
 
+def plot_bar_red(plots):
+    # Defining constatns
+    capsize = 3
+
+    # creates x-axis values
+    x_axis = df_filt.index.tolist()
+    x_indexes = np.arange(len(x_axis))
+
+    # creates y-axis values
+    y_axis1 = df_filt["Av_gas_reduction"].tolist()
+
+    # creating list of min reduction
+    ls_min_red = df_filt["Min_gas_reduction"].tolist()
+
+    # creating error bars for axis 1 and 2
+    er_min_axis1 = df_filt["Av_gas_reduction"].tolist()
+    er_max_axis1 = df_filt["Max_gas_reduction"].tolist()
+
+    for i in range(len(x_axis)):
+        # creating error bars
+        er_min_axis1[i] -= ls_min_red[i]
+        er_max_axis1[i] -= y_axis1[i]
+
+    # add plot
+    ax1 = plots.add_subplot()
+
+    # plot x and y values
+    ax1.bar(
+        x_indexes,
+        y_axis1,
+        color="#C476E3",
+    )
+
+    # plotting the errorbars
+    ax1.errorbar(
+        x_indexes,
+        y_axis1,
+        yerr=[er_min_axis1, er_max_axis1],
+        fmt=" ",
+        ecolor="black",
+        capsize=capsize,
+    )
+
+    # set title and lables
+    ax1.set_title("Gas reduction")
+    ax1.set_xlabel("Houses")
+    ax1.set_ylabel("reduction (%)")
+
+    # create boundaries
+    ax1.set_ylim(0)
+    ax1.set_xlim(-0.5)
+
+    # add grid
+    ax1.yaxis.grid(color="gray")
+    ax1.set_axisbelow(True)
+
+    # set ticks
+    plt.setp(ax1, xticks=x_indexes, xticklabels=x_axis)
+
+    return (plots, ax1)
+
+
+def reset_filter():
+
+    # reset all filters
+    for _, i in all_checkboxes.dict.items():
+        i.checkboxes["All/None"][0].set(True)
+        i.check_all_items()
+
+
 def draw_plot():
     # set gasprice variable
     global gas_price
-    gas_price = 0.80
+    try:
+        gas_price = float(root.getvar(name="Gas_price"))
+    except:
+        messagebox.showerror("Gas price error", "Make sure the gas price is numeric!")
+        return None
 
     # deletes old content
     for items in frame_plots.winfo_children():
@@ -774,21 +908,20 @@ def draw_plot():
             amount_of_houses, round(mean, 2), round(std, 2)
         )
 
-        # placing min max av frame
-        frame_av_min_max.place(
-            x=scrol_width,
-            rely=1,
-            height=100,
-            width=select_plot_width,
-            y=-180,
-        )
+        # clearing frame av min max
+        clear_av_min_max()
+
+        # adding radio buttons to average min max
+        draw_radio_av_min_max(frame_av_min_max)
 
     # if bar graph is selected
     elif selected_plot.get() == "bar":
         # create bar graph
         plots, ax1 = plot_bar(plots)
         # create info text
-        text = "Normalised to 1 year\nGas price:€0.80"
+        text = "Normalised to 1 year\nGas price per m³:€{}".format(
+            root.getvar(name="Gas_price")
+        )
 
         root.update()
         width = root.winfo_width() - scrol_width - select_plot_width
@@ -798,8 +931,38 @@ def draw_plot():
             ax1.set_xlabel("")
             plt.setp(ax1, xticks=[], xticklabels=[])
 
-        # removing min max av frame
-        frame_av_min_max.place_forget()
+        # clearing frame av min max
+        clear_av_min_max()
+
+        # adding lable to av min max frame
+        ttk.Label(frame_av_min_max, text="Chart settings").pack()
+
+        # adding separator
+        ttk.Separator(frame_av_min_max).pack()
+
+        # adding lable:
+        ttk.Label(frame_av_min_max, text="Gas price per m³").pack()
+        ttk.Entry(frame_av_min_max, textvariable="Gas_price").pack()
+        ttk.Button(frame_av_min_max, text="Apply", command=filter_data).pack()
+
+    # if bar graph reduction is selected
+    elif selected_plot.get() == "bar red":
+        # create bar graph
+        plots, ax1 = plot_bar_red(plots)
+        # create info text
+        text = "Tool calculated gas reduction for heating."
+
+        # update the root
+        root.update()
+        width = root.winfo_width() - scrol_width - select_plot_width
+
+        # check if x-axis lables can be placed (size restrictions)
+        if width // amount_of_houses < 80:
+            ax1.set_xlabel("")
+            plt.setp(ax1, xticks=[], xticklabels=[])
+
+        # clearing frame av min max
+        clear_av_min_max()
 
     # create and place plot on canvas
     canvas_plots = FigureCanvasTkAgg(plots, master=frame_plots)
@@ -811,12 +974,20 @@ def draw_plot():
     toolbar.update()
     canvas_plots.get_tk_widget().pack()
 
+    # add reset filter button
+    q = ttk.Style()
+    q.configure("my3.TButton", foreground="#e0465d")
+
+    ttk.Button(
+        frame_plot_info, text="Reset filters", style="my3.TButton", command=reset_filter
+    ).pack(anchor="ne")
+
     # creating labels
     label = ttk.Label(
         frame_plot_info, text=text, relief=tk.SOLID, borderwidth=2, padding=3
     )
     # add text to label frame
-    label.pack(side=tk.RIGHT)
+    label.pack(anchor="ne", pady=p)
 
 
 def draw_checkboxes(name, all_checkboxes):
@@ -887,13 +1058,13 @@ def draw_buttons(df_results, frame_buttons):
             # checks if button is in row 0 or 1
             if (i % 3) == 0:
                 # adds button to row 0
-                button.button.grid(row=1, column=j, padx=3, pady=3)
+                button.button.grid(row=0, column=j, padx=3, pady=3)
             elif (i % 3) == 1:
                 # adds button to row 1
-                button.button.grid(row=2, column=j, padx=3, pady=3)
+                button.button.grid(row=1, column=j, padx=3, pady=3)
             elif (i % 3) == 2:
                 # adds button to row 2
-                button.button.grid(row=3, column=j, padx=3, pady=3)
+                button.button.grid(row=2, column=j, padx=3, pady=3)
                 j += 1
 
             i += 1
@@ -930,10 +1101,14 @@ def results_gui(df):
     scrol_width = 200
     button_height = 120
     button_width = 600
-    select_plot_width = 100
-    select_plot_height = 100
+    select_plot_width = 145
+    select_plot_height = 145
     scrol_width_window = 275
     scrollbar_width = 15
+
+    # create variable for gas price
+    tk.StringVar(root, name="Gas_price")
+    root.setvar("Gas_price", value="0.79")
 
     # add menubar
     menu_bar()
@@ -1035,7 +1210,14 @@ def results_gui(df):
     selected_av_min_max = tk.StringVar(root, name="av_min_max", value="bellcurve")
     root.setvar(name="av_min_max", value="Av")
 
-    draw_radio_av_min_max(frame_av_min_max)
+    # placing frame av min max
+    frame_av_min_max.place(
+        x=scrol_width,
+        relheight=1,
+        height=-button_height - select_plot_height - 50,
+        width=select_plot_width,
+        y=button_height + select_plot_height + 50,
+    )
 
     # draw plot
     filter_data()
@@ -1049,7 +1231,7 @@ def results_gui(df):
 
 def main():
     # path to results file
-    res_path = "./results/analysis.csv"
+    res_path = "./results/result 2021-01-12_12-30.csv"
     # create data frame
     df = pd.read_csv(res_path, index_col="Serial_number")
     # opens gui

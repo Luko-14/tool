@@ -100,6 +100,9 @@ def analyze_house(i, average_dates, comp_dates):
     df_results["Av_new_usage"][i] = new_usage[0]
     df_results["Min_new_usage"][i] = new_usage[1]
     df_results["Max_new_usage"][i] = new_usage[2]
+    df_results["Av_use"][i] = average_use[0]
+    df_results["Av_use_min"][i] = average_use[1]
+    df_results["Av_use_max"][i] = average_use[2]
 
     # get the first row  of data
     house_data = df_snr.iloc[0]
@@ -139,8 +142,17 @@ def results_file():
     # removing None from database
     df_results.dropna(inplace=True)
 
-    # create adn write new csv file
+    # create and write new results csv file
     df_results.to_csv(results_path)
+
+    # check if data path exist
+    if not os.path.isdir("./data"):
+        os.mkdir("./data")
+
+    # filtering, creating and writing aurum csv
+    df_aurum[df_aurum["Unit"] == "m3"].drop(["Correction"], axis=1).dropna().to_csv(
+        "./data/aurum.csv"
+    )
 
     # returning path
     return results_path
@@ -376,6 +388,9 @@ def initialise_df():
             "Influence_on_heating",
             "Change_in_residents",
             "Change_in_behaviour",
+            "Av_use",
+            "Av_use_min",
+            "Av_use_max",
             "Av_old_usage",
             "Min_old_usage",
             "Max_old_usage",
@@ -392,11 +407,11 @@ def initialise_df():
     df_results.set_index("Serial_number", inplace=True)
 
 
-# removes all childeren in root
+# removes all children in root
 def clear_root():
-    for childeren in root.winfo_children():
-        if type(childeren) != tk.Toplevel:
-            childeren.pack_forget()
+    for children in root.winfo_children():
+        if type(children) != tk.Toplevel:
+            children.pack_forget()
 
 
 # creating frame for selecting old results
@@ -514,12 +529,23 @@ def create_analysis():
         try:
             initialise_df()
         except ValueError as e:
-            messagebox.showerror(
-                title="Invalid file",
-                message='Please make sure the correct {} file is selected! \n For more info press "help".'.format(
+
+            if str(e) == "aurum":
+                text = 'Please make sure the correct {} file is selected! \n For more info press "help".'.format(
                     e
-                ),
-            )
+                )
+
+            elif str(e) == "pioneering":
+                text = 'Please make sure the correct {} file is selected! \n For more info press "help".\n Make sure the sheetname is "Blad1".'.format(
+                    e
+                )
+
+            elif str(e) == "survey":
+                text = 'Please make sure the correct {} file is selected! \n For more info press "help".\n Make sure the sheetname is "Bron data".'.format(
+                    e
+                )
+
+            messagebox.showerror(title="Invalid file", message=text)
             return None
         except NameError as e:
             messagebox.showerror(
