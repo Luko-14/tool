@@ -1,7 +1,23 @@
-python
-    requests
-    pandas
-    os
-    numpy
-    matplotlib
-    scipy
+#python 3.8.5
+	
+#libraries
+ttkthemes==3.2.0
+requests==2.24.0
+pandas==1.1.3
+numpy==1.19.2
+matplotlib==3.3.3
+scipy==1.5.4
+xlrd==1.2.0
+
+#Use command
+	#pip install -r requirements.txt
+
+#Create a new installer:
+	#pip install pyinstaller
+	#pyinstaller.exe --onefile --windowed --icon=resources\tool_logo.ico analysis.py
+	
+	#After the installer is complete make sure the resources folder and the exe file are in the same directory!
+
+#The tool.py file cant be run individually. run analysis.py
+
+#Make sure the terminal path is set to the python code folder!
