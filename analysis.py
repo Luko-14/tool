@@ -858,6 +858,10 @@ def main():
 
     listbox_results = tk.Listbox(root)
 
+    # check if data path exist
+    if not os.path.isdir("./results"):
+        os.mkdir("./results")
+
     results_list = os.listdir("./results")
 
     a = ttk.Style()

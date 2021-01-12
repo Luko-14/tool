@@ -21,6 +21,7 @@ class AllCheckboxes:
 
         # setting  checkbox frame
         Checkboxes.frame = frame_scroll_items
+        Checkboxes.root = root
 
         # get name of index
         index_name = df_results.index.name
@@ -54,7 +55,7 @@ class Checkboxes:
         self.checkboxes["All/None"] = []
         # create allnon variable
         self.checkboxes["All/None"].append(
-            tk.BooleanVar(root, True, name=(name + "_All/None"))
+            tk.BooleanVar(self.root, True, name=(name + "_All/None"))
         )
         # create centered allnon checkbox
         self.checkboxes["All/None"].append(
@@ -71,7 +72,7 @@ class Checkboxes:
             self.checkboxes[item] = []
             # create variable
             self.checkboxes[item].append(
-                tk.BooleanVar(root, True, name=name + str(item))
+                tk.BooleanVar(self.root, True, name=name + str(item))
             )
             # create checkbox
             self.checkboxes[item].append(
@@ -92,13 +93,13 @@ class Checkboxes:
         if allnone.get():
             # changes state of all checkboxes to true
             for i in self.checkboxes:
-                root.setvar(name=self.name + str(i), value=True)
+                self.root.setvar(name=self.name + str(i), value=True)
             # updates the graph
             checkbox_click()
         else:
             # changes state of all checkboxes to false
             for i in self.checkboxes:
-                root.setvar(name=self.name + str(i), value=False)
+                self.root.setvar(name=self.name + str(i), value=False)
 
 
 class Buttons:
@@ -159,9 +160,7 @@ def filter_table():
                 # formats the column name and adds it to col
                 col.append(i.replace(" ", "_"))
         except:
-            col = column_checkbox.ls
-            for j in range(len(col)):
-                col[j] = col[j].replace(" ", "_")
+            col.append(i.replace(" ", "_"))
 
     # returns the filtered df with only the selected columns
     return df_filt[col]
@@ -341,6 +340,7 @@ def window_view_data():
 
     # set frame of checkboxes
     Checkboxes.frame = frame_scroll_items_win
+    Checkboxes.root = window
 
     # creating list with columns
     col_list = df_results.columns.tolist()
@@ -352,7 +352,6 @@ def window_view_data():
     # creating checkboxes
     global column_checkbox
     column_checkbox = Checkboxes(col_list, "Columns")
-    column_checkbox = column_checkbox
 
     # places each checkbox in dict
     row = 0
@@ -518,16 +517,19 @@ def menu_bar():
 
 def draw_select_plot(frame_select_plot):
 
+    # create variables
     width = 70
     height = 30
 
+    # create plot variable
     global selected_plot
     selected_plot = tk.StringVar(root, name="plot", value="bellcurve")
 
+    # create radio buttons
     ttk.Radiobutton(
         frame_select_plot,
         variable=selected_plot,
-        text="bell",
+        text="bellcurve",
         value="bellcurve",
         width=width,
         command=filter_data,
@@ -536,12 +538,13 @@ def draw_select_plot(frame_select_plot):
     ttk.Radiobutton(
         frame_select_plot,
         variable=selected_plot,
-        text="bar",
+        text="bar graph",
         value="bar",
         width=width,
         command=filter_data,
     ).place(rely=0.5, anchor="w")
 
+    # center the buttons
     frame_select_plot.grid_rowconfigure(0)
 
 
@@ -599,7 +602,7 @@ def plot_bellcurve(plots):
     # set title and lables
     ax1.set_title("Bellcurve gas reduction")
     ax1.set_xlabel("Gas Reduction(%)")
-    ax1.set_ylabel("Chance")
+    ax1.set_ylabel("Density")
 
     # creates x-axis ticks
     pos_x = []
@@ -626,7 +629,7 @@ def plot_bellcurve(plots):
 
     # fill regions
     ax1.fill_between(x_fil1, y_fil1, alpha=0.25, color=std2_color)
-    ax1.fill_between(x_fil2, y_fil2, alpha=0.25, color=std1_color, label="68.2")
+    ax1.fill_between(x_fil2, y_fil2, alpha=0.25, color=std1_color, label="68.2%")
     ax1.fill_between(x_fil3, y_fil3, alpha=0.25, color=std2_color, label="95.4%")
 
     # set x and y axis limits
@@ -761,8 +764,12 @@ def draw_plot():
         constrained_layout=True,
     )
 
+    # if bellcurve is selected
     if selected_plot.get() == "bellcurve":
+        # create bell curve
         plots = plot_bellcurve(plots)
+
+        # create info text
         text = "Number of houses: {} \nMean:{} \nStandard deviation: {}".format(
             amount_of_houses, round(mean, 2), round(std, 2)
         )
@@ -776,13 +783,17 @@ def draw_plot():
             y=-180,
         )
 
+    # if bar graph is selected
     elif selected_plot.get() == "bar":
+        # create bar graph
         plots, ax1 = plot_bar(plots)
-        text = "Normalised to 1 year\n Gas price:{}".format(round(gas_price, 2))
+        # create info text
+        text = "Normalised to 1 year\nGas price:€0.80"
 
         root.update()
         width = root.winfo_width() - scrol_width - select_plot_width
 
+        # check if x-axis lables can be placed (size restrictions)
         if width // amount_of_houses < 80:
             ax1.set_xlabel("")
             plt.setp(ax1, xticks=[], xticklabels=[])
@@ -1037,7 +1048,11 @@ def results_gui(df):
 
 
 def main():
-    df = pd.read_csv("./data/with errors.csv", index_col="Serial_number")
+    # path to results file
+    res_path = "./results/analysis.csv"
+    # create data frame
+    df = pd.read_csv(res_path, index_col="Serial_number")
+    # opens gui
     results_gui(df)
 
 

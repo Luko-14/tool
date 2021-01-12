@@ -312,15 +312,17 @@ def get_seq_weighted_dates(seq, df, BEGIN_DATE):
 # for testing / debugging
 def main():
 
+    # reqeuest data from knmi
     get_data()
 
     # open csv
-    df = pd.read_csv("./results/dd.csv", parse_dates=["Date"], index_col="Date")
+    df = pd.read_csv("./data/knmi_data.csv", parse_dates=["Date"], index_col="Date")
 
-    seq = compare_dates(0, 4, df)
-    # seq = remove_overlap(seq)
-    # dates = get_seq_weighted_dates(4, df)
-    # print(dates)
+    begin = pd.to_datetime("1-8-2020", format="%d-%m-%Y")
+    seq = compare_dates(5, 3, df, begin)
+    dates = get_seq_weighted_dates(4, df, begin)
+
+    print(dates)
     print(seq)
 
 

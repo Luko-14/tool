@@ -79,8 +79,8 @@ def average_use(df, dates, gasmeter_type):
         else:
             aurum_err = 1
 
-        av_use_min = av_use * aurum_err * flow_dev_min
-        av_use_max = av_use / aurum_err * flow_dev_max
+        av_use_min = av_use * aurum_err / flow_dev_max
+        av_use_max = av_use / aurum_err / flow_dev_min
         # return the average usage per day
         return (av_use, av_use_min, av_use_max, aurum_err)
     else:
@@ -310,39 +310,3 @@ def gas_reduction(df_snr, df_knmi, dates, av_use, old_usage_snr):
         return (total_average, total_old_usage, total_new_usage)
     else:
         return None
-
-
-# for testing / debugging
-def main():
-
-    get_knmi_data.get_data()
-
-    # initializing the aurum dataframe
-    df_aurum = pd.read_excel(
-        "./data/aurum_data.xls",
-        sheet_name="Alle data Aurum+ Pioneering",
-        parse_dates=["Measurement date"],
-    )
-
-    # initializing the knmi dataframe
-    df_knmi = pd.read_csv(
-        "./data/knmi_data.csv", parse_dates=["Date"], index_col="Date"
-    )
-
-    # get dict of dates to check
-    average_dates = get_knmi_data.get_seq_weighted_dates(4, df_knmi)
-    comp_dates = get_knmi_data.compare_dates(5, 3, df_knmi)
-
-    # filter df for serial nummer
-    df_snr = filter_df(df_aurum, 1011240)
-
-    av = average_use(df_snr, average_dates, "Mechanical meter")
-    gu = gas_reduction(df_snr, df_knmi, comp_dates, av, av)
-
-    print(av)
-    print(gu)
-
-
-# run main program if the file is executed
-if __name__ == "__main__":
-    main()
