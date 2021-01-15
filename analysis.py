@@ -72,11 +72,18 @@ def analyze_house(i, average_dates, comp_dates):
         df_snr, average_dates, df_results.loc[Serial_number, "Gasmeter_type"]
     )
 
+    # checks if average use is calculated
+    if average_use[0] != 0:
+        with_av_use = True
+    else:
+        with_av_use = False
+
     values = tool.gas_reduction(df_snr, df_knmi, comp_dates, average_use, old_usage_snr)
 
     # check if gas reduction is calculated
     if not values:
         return False
+
     # unpacks data from values
     gas_red = values[0]
     old_usage = values[1]
@@ -85,10 +92,6 @@ def analyze_house(i, average_dates, comp_dates):
     # making gas reduction a percentage
     for j in range(len(gas_red)):
         gas_red[j] = (1 - gas_red[j]) * 100
-
-        # cant have a negative gas reduciton.
-        if gas_red[j] < 0:
-            gas_red[j] = 0
 
     # add results to dataframe
     df_results["Av_gas_reduction"][i] = gas_red[0]
@@ -103,6 +106,7 @@ def analyze_house(i, average_dates, comp_dates):
     df_results["Av_use"][i] = average_use[0]
     df_results["Av_use_min"][i] = average_use[1]
     df_results["Av_use_max"][i] = average_use[2]
+    df_results["Av_use_data"][i] = with_av_use
 
     # get the first row  of data
     house_data = df_snr.iloc[0]
@@ -391,6 +395,7 @@ def initialise_df():
             "Av_use",
             "Av_use_min",
             "Av_use_max",
+            "Av_use_data",
             "Av_old_usage",
             "Min_old_usage",
             "Max_old_usage",
@@ -555,6 +560,22 @@ def create_analysis():
                 ),
             )
             return None
+
+        # make sure the file name is suitable
+        not_suitable_ls = ["/", "\\", ":", "*", "?", '"', "<", ">", "|"]
+
+        # check if any item is in list
+        for i in not_suitable_ls:
+            if i in root.getvar(name="result_name"):
+                # create error popup
+                messagebox.showerror(
+                    title="File name not suitable",
+                    message='The filename you selected is not suitable.\n It can not contain "{}"'.format(
+                        i
+                    ),
+                )
+
+                return None
 
         # starting analysis
         start_analysis()

@@ -67,24 +67,25 @@ def average_use(df, dates, gasmeter_type):
     # sum all gas usage from comp dates
     for _, ls in dates.items():
         for items in ls:
-            df1 = df.loc[items[0] : items[1]]["Measurement value"]
+            df1 = df.loc[items[0] : items[1]]["Measurement value"].dropna()
             if not df1.empty:
                 tot_usg += df1.sum()
                 days += df1.index.size / 24
 
+    # deviation variable based on gasmeter type
+    if gasmeter_type == "Mechanical meter":
+        aurum_err = 0.95
+    else:
+        aurum_err = 1
+
     if days != 0:
         av_use = tot_usg / days
-        if gasmeter_type == "Mechanical meter":
-            aurum_err = 0.95
-        else:
-            aurum_err = 1
-
         av_use_min = av_use * aurum_err / flow_dev_max
         av_use_max = av_use / aurum_err / flow_dev_min
         # return the average usage per day
         return (av_use, av_use_min, av_use_max, aurum_err)
     else:
-        return None  # no data from serial number
+        return (0, 0, 0, aurum_err)  # no data from average useage
 
 
 # calcualte the old usage
@@ -197,9 +198,6 @@ def calc_old_usage(df_knmi, seq_weighted_days, old_seq, df_old_usage, av_use):
 
 # calculates the gas usage for heating
 def gas_reduction(df_snr, df_knmi, dates, av_use, old_usage_snr):
-    # checks if there is data for average use
-    if av_use == None:
-        return None
 
     # retrieving aurum error
     aurum_err = av_use[3]
@@ -211,7 +209,7 @@ def gas_reduction(df_snr, df_knmi, dates, av_use, old_usage_snr):
 
     # creating variables for total usage
     # in format [average,min,max]
-    total_days = [0, 0, 0]
+    total_weighted_days = [0, 0, 0]
     total_old_usage = [0, 0, 0]
     total_new_usage = [0, 0, 0]
 
@@ -272,25 +270,25 @@ def gas_reduction(df_snr, df_knmi, dates, av_use, old_usage_snr):
             if new_usage[0] > 0 and old_usage[0] > 0:
                 # add av gas reduction to list and adds all values
                 av_ls.append(new_usage[0] / old_usage[0])
-                total_days[0] += days
                 total_old_usage[0] += old_usage[0]
                 total_new_usage[0] += new_usage[0]
+                total_weighted_days[0] += sum_weighted[0]
 
             # checks if min gas use is positive
             if new_usage[1] > 0 and old_usage[2] > 0:
                 # add min gas reduction to list and adds all values
                 min_ls.append(new_usage[1] / old_usage[2])
-                total_days[1] += days
                 total_old_usage[2] += old_usage[2]
                 total_new_usage[1] += new_usage[1]
+                total_weighted_days[1] += sum_weighted[1]
 
             # checks max av gas use is positive
             if new_usage[2] > 0 and old_usage[1] > 0:
                 # add max gas reduction to list and adds all values
                 max_ls.append(new_usage[2] / old_usage[1])
-                total_days[2] += days
                 total_old_usage[1] += old_usage[1]
                 total_new_usage[2] += new_usage[2]
+                total_weighted_days[2] += sum_weighted[2]
 
     # checks if list is not empty
     if av_ls and min_ls and max_ls:
@@ -301,10 +299,17 @@ def gas_reduction(df_snr, df_knmi, dates, av_use, old_usage_snr):
         total_average.append(sum(min_ls) / len(min_ls))
         total_average.append(sum(max_ls) / len(max_ls))
 
-        # normalizing gas usage to years
+        # calculates the weighted degree days in 2019
+        tot_weighted_2019 = df_knmi["2019"]["weight_degr_days"].sum()
+
+        # normalizing gas usage to year 2019
         for i in range(3):
-            total_old_usage[i] = total_old_usage[i] / total_days[i] * 365
-            total_new_usage[i] = total_new_usage[i] / total_days[i] * 365
+            total_old_usage[i] = (
+                total_old_usage[i] / total_weighted_days[i] * tot_weighted_2019
+            )
+            total_new_usage[i] = (
+                total_new_usage[i] / total_weighted_days[i] * tot_weighted_2019
+            )
 
         # returns values to main
         return (total_average, total_old_usage, total_new_usage)

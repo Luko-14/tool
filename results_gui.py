@@ -297,7 +297,7 @@ def window_view_data():
     # create new window
     global window
     window = tk.Toplevel(root)
-    window.geometry("1000x500")
+    window.geometry("1000x600")
     window.iconbitmap("./resources/tool_logo.ico")
     window.attributes("-topmost", True)
 
@@ -491,6 +491,20 @@ def filter_data():
         )
         return 0
 
+    elif selected_plot.get() == "bar filt" and amount_of_houses == 0:
+        messagebox.showerror(
+            title="Data error",
+            message="With the currently selected filters the dataframe has no results. \nTry a different filter!",
+        )
+        return 0
+
+    elif selected_plot.get() == "bar red" and amount_of_houses == 0:
+        messagebox.showerror(
+            title="Data error",
+            message="With the currently selected filters the dataframe has no results. \nTry a different filter!",
+        )
+        return 0
+
     draw_plot()
 
 
@@ -563,7 +577,7 @@ def draw_select_plot(frame_select_plot):
         frame_select_plot,
         variable=selected_plot,
         text="bar sequence",
-        value="bar conf",
+        value="bar filt",
         width=width,
         command=filter_data,
     ).pack(anchor="w")
@@ -804,6 +818,184 @@ def plot_bar(plots):
     return (plots, ax1)
 
 
+def plot_bar_filter(plots):
+
+    # Defining constatns
+    width = 0.25
+    capsize = 3
+    dict_df = {}
+
+    # creates x-axis values
+    x_axis = df_filt.index.tolist()
+    x_indexes = np.arange(len(x_axis))
+
+    ls_av_use = df_filt["Av_use"].tolist()
+
+    # creates y-axis values
+    dict_df["y_axis1"] = []
+    dict_df["y1_min"] = []
+    dict_df["y1_max"] = []
+    dict_df["Er_y1_min"] = []
+    dict_df["Er_y1_max"] = []
+
+    # creating second y axis
+    dict_df["y_axis2"] = df_filt["Av_old_usage"].tolist()
+
+    # money saved axis
+    dict_df["y_axis3"] = []
+    dict_df["Er_y3_min"] = []
+    dict_df["Er_y3_max"] = []
+
+    # creating list of min and max old and new usage
+    dict_df["Min_old"] = df_filt["Min_old_usage"].tolist()
+    dict_df["Max_old"] = df_filt["Max_old_usage"].tolist()
+
+    # creating error bars for axis2
+    dict_df["Er_y2_min"] = df_filt["Av_old_usage"].tolist()
+    dict_df["Er_y2_max"] = df_filt["Max_old_usage"].tolist()
+
+    for i in range(len(x_axis)):
+        # defining constants based on serial number
+        if df_filt.loc[x_axis[i]]["Gasmeter_type"] == "Mechanical meter":
+            aurum_err = 0.95
+        else:
+            aurum_err = 1
+
+        flow_dev_min = (100 - 0.17) / 100
+        flow_dev_max = (100 + 0.92) / 100
+
+        # filtering the dataframe to serial number and date period
+        new_use_snr = df_aurum[df_aurum["Serialnumber"] == x_axis[i]]
+        new_use_snr = new_use_snr.set_index("Date_time")["Measurement value"]
+        new_use_snr = new_use_snr[
+            root.getvar(name="Begin_date") : root.getvar(name="End_date")
+        ]
+        new_use_days = new_use_snr.index.size / 24
+        new_use_snr = new_use_snr.sum()
+
+        # calculating the sum of all measurements and add it to the y_axis list
+        dict_df["y_axis1"].append(new_use_snr)
+        dict_df["y1_min"].append(new_use_snr / flow_dev_max * aurum_err)
+        dict_df["y1_max"].append(new_use_snr / flow_dev_min / aurum_err)
+
+        # calculating error bars y1
+        dict_df["Er_y1_min"].append(new_use_snr - dict_df["y1_min"][i])
+        dict_df["Er_y1_max"].append(dict_df["y1_max"][i] - new_use_snr)
+
+        # calculating the weighted degree days
+        weighted_degr_2019 = df_knmi["2019"]["weight_degr_days"].sum()
+        weighted_degr_period = df_knmi[
+            root.getvar(name="Begin_date") : root.getvar(name="End_date")
+        ]["weight_degr_days"].sum()
+
+        # transforming the total old usage to old usage from this period
+        for j in dict_df:
+            if (
+                j == "y_axis2"
+                or j == "Min_old"
+                or j == "Max_old"
+                or j == "Er_y2_min"
+                or j == "Er_y2_max"
+            ):
+                dict_df[j][i] = (
+                    dict_df[j][i] / weighted_degr_2019 * weighted_degr_period
+                    + ls_av_use[i] * new_use_days
+                )
+
+        # creating error bars
+        dict_df["Er_y2_min"][i] -= dict_df["Min_old"][i]
+        dict_df["Er_y2_max"][i] -= dict_df["y_axis2"][i]
+
+        # calculating money saved
+        dict_df["y_axis3"].append(
+            (dict_df["y_axis2"][i] - dict_df["y_axis1"][i]) * gas_price
+        )
+        dict_df["Er_y3_min"].append(
+            dict_df["y_axis3"][i]
+            - (dict_df["Min_old"][i] - dict_df["y1_max"][i]) * gas_price
+        )
+        dict_df["Er_y3_max"].append(
+            (dict_df["Max_old"][i] - dict_df["y1_min"][i]) * gas_price
+            - dict_df["y_axis3"][i]
+        )
+
+    # add plot
+    ax1 = plots.add_subplot()
+
+    # plot x and y values
+    ax1.bar(
+        x_indexes - width,
+        dict_df["y_axis2"],
+        width=width,
+        color="#ED254E",
+        label="Gas usage before balancing (m³)",
+    )
+
+    ax1.bar(
+        x_indexes,
+        dict_df["y_axis1"],
+        width=width,
+        color="#3E7CB1",
+        label="Gas usage after balancing (m³)",
+    )
+
+    ax1.bar(
+        x_indexes + width,
+        dict_df["y_axis3"],
+        width=width,
+        color="green",
+        label="Cost reduction (€)",
+    )
+
+    # plotting the errorbars
+    ax1.errorbar(
+        x_indexes,
+        dict_df["y_axis1"],
+        yerr=[dict_df["Er_y1_min"], dict_df["Er_y1_max"]],
+        fmt=" ",
+        ecolor="black",
+        capsize=capsize,
+    )
+
+    ax1.errorbar(
+        x_indexes - width,
+        dict_df["y_axis2"],
+        yerr=[dict_df["Er_y2_min"], dict_df["Er_y2_max"]],
+        fmt=" ",
+        ecolor="black",
+        capsize=capsize,
+    )
+
+    ax1.errorbar(
+        x_indexes + width,
+        dict_df["y_axis3"],
+        yerr=[dict_df["Er_y3_min"], dict_df["Er_y3_max"]],
+        fmt=" ",
+        ecolor="black",
+        capsize=capsize,
+    )
+
+    # set title and lables
+    ax1.set_title("Gas usage")
+    ax1.set_xlabel("Houses")
+
+    # create boundaries
+    ax1.set_ylim(0)
+    ax1.set_xlim(-0.5)
+
+    # add legend
+    ax1.legend(loc=1)
+
+    # add grid
+    ax1.yaxis.grid(color="gray")
+    ax1.set_axisbelow(True)
+
+    # set ticks
+    plt.setp(ax1, xticks=x_indexes, xticklabels=x_axis)
+
+    return (plots, ax1)
+
+
 def plot_bar_red(plots):
     # Defining constatns
     capsize = 3
@@ -853,7 +1045,6 @@ def plot_bar_red(plots):
     ax1.set_ylabel("reduction (%)")
 
     # create boundaries
-    ax1.set_ylim(0)
     ax1.set_xlim(-0.5)
 
     # add grid
@@ -919,7 +1110,7 @@ def draw_plot():
         # create bar graph
         plots, ax1 = plot_bar(plots)
         # create info text
-        text = "Normalised to 1 year\nGas price per m³:€{}".format(
+        text = "Normalised to 2019\nGas price per m³:€{}".format(
             root.getvar(name="Gas_price")
         )
 
@@ -937,12 +1128,9 @@ def draw_plot():
         # adding lable to av min max frame
         ttk.Label(frame_av_min_max, text="Chart settings").pack()
 
-        # adding separator
-        ttk.Separator(frame_av_min_max).pack()
-
         # adding lable:
         ttk.Label(frame_av_min_max, text="Gas price per m³").pack()
-        ttk.Entry(frame_av_min_max, textvariable="Gas_price").pack()
+        ttk.Entry(frame_av_min_max, textvariable="Gas_price").pack(pady=3)
         ttk.Button(frame_av_min_max, text="Apply", command=filter_data).pack()
 
     # if bar graph reduction is selected
@@ -964,6 +1152,40 @@ def draw_plot():
         # clearing frame av min max
         clear_av_min_max()
 
+    # if bar graph filterable is selected
+    elif selected_plot.get() == "bar filt":
+        # create bar graph
+        plots, ax1 = plot_bar_filter(plots)
+        # create info text
+        text = "Gas consumption from {} untill {}.\nGas price per m³:€{}".format(
+            root.getvar(name="Begin_date"),
+            root.getvar(name="End_date"),
+            root.getvar(name="Gas_price"),
+        )
+
+        root.update()
+        width = root.winfo_width() - scrol_width - select_plot_width
+
+        # check if x-axis lables can be placed (size restrictions)
+        if width // amount_of_houses < 80:
+            ax1.set_xlabel("")
+            plt.setp(ax1, xticks=[], xticklabels=[])
+
+        # clearing frame av min max
+        clear_av_min_max()
+
+        # adding lable to av min max frame
+        ttk.Label(frame_av_min_max, text="Chart settings").pack()
+
+        # adding lable:
+        ttk.Label(frame_av_min_max, text="Gas price per m³").pack()
+        ttk.Entry(frame_av_min_max, textvariable="Gas_price").pack(pady=3)
+        ttk.Label(frame_av_min_max, text="Begin date(y-m-d)").pack()
+        ttk.Entry(frame_av_min_max, textvariable="Begin_date").pack(pady=3)
+        ttk.Label(frame_av_min_max, text="End date(y-m-d)").pack()
+        ttk.Entry(frame_av_min_max, textvariable="End_date").pack(pady=3)
+        ttk.Button(frame_av_min_max, text="Apply", command=filter_data).pack()
+
     # create and place plot on canvas
     canvas_plots = FigureCanvasTkAgg(plots, master=frame_plots)
     canvas_plots.draw()
@@ -973,14 +1195,6 @@ def draw_plot():
     toolbar = NavigationToolbar2Tk(canvas_plots, frame_plots)
     toolbar.update()
     canvas_plots.get_tk_widget().pack()
-
-    # add reset filter button
-    q = ttk.Style()
-    q.configure("my3.TButton", foreground="#e0465d")
-
-    ttk.Button(
-        frame_plot_info, text="Reset filters", style="my3.TButton", command=reset_filter
-    ).pack(anchor="ne")
 
     # creating labels
     label = ttk.Label(
@@ -1048,6 +1262,7 @@ def draw_buttons(df_results, frame_buttons):
         "Influence_on_heating",
         "Change_in_residents",
         "Change_in_behaviour",
+        "Av_use_data",
     ]
     # column and row number
     j = 0
@@ -1069,12 +1284,23 @@ def draw_buttons(df_results, frame_buttons):
 
             i += 1
 
+    # add reset filter button
+    q = ttk.Style()
+    q.configure("my3.TButton", foreground="#e0465d")
+
+    ttk.Button(
+        frame_buttons, text="Reset filters", style="my3.TButton", command=reset_filter
+    ).grid(row=1, column=4, rowspan=2, sticky="NESW")
+
     return button_list[0]
 
 
 def results_gui(df):
-    global df_results
+    global df_results, df_aurum, df_knmi
+
+    # sets results dataframe from analysis as df_results
     df_results = df
+
     # changes datatype to int
     df_results["Residents"] = df_results["Residents"].astype(int)
     df_results["Solar_panels"] = df_results["Solar_panels"].astype(int)
@@ -1085,12 +1311,33 @@ def results_gui(df):
         if df_results[column].dtype == float:
             df_results[column] = round(df_results[column], 3)
 
+    # open the complete aurum data frame
+    df_aurum = pd.read_csv(
+        "./data/aurum.csv", index_col=0, parse_dates=["Measurement date"]
+    )
+    # changing datatype from string to time
+    df_aurum["Measurement time"] = df_aurum["Measurement time"].apply(
+        lambda x: np.timedelta64(x.split(":")[0], "h")
+    )
+
+    df_aurum["Measurement date"] = pd.to_datetime(
+        df_aurum["Measurement date"], format="%d-%m-%Y"
+    )
+
+    # creating new collumn with date and time combined
+    df_aurum["Date_time"] = df_aurum["Measurement date"] + df_aurum["Measurement time"]
+
+    # opening the knmi data frame
+    df_knmi = pd.read_csv(
+        "./data/knmi_data.csv", parse_dates=["Date"], index_col="Date"
+    )
+
     # setup the gui
     global root
     root = ThemedTk()
     root.get_themes()
     root.set_theme("breeze")
-    root.geometry("1000x500")
+    root.geometry("1200x600")
     root.title("Balancing Radiators Analysis")
     root.iconbitmap("./resources/tool_logo.ico")
 
@@ -1100,15 +1347,20 @@ def results_gui(df):
     p = 12
     scrol_width = 200
     button_height = 120
-    button_width = 600
+    button_width = 750
     select_plot_width = 145
     select_plot_height = 145
     scrol_width_window = 275
     scrollbar_width = 15
 
-    # create variable for gas price
+    # create variable for gas price begin and end date
     tk.StringVar(root, name="Gas_price")
     root.setvar("Gas_price", value="0.79")
+
+    tk.StringVar(root, name="Begin_date")
+    root.setvar("Begin_date", value="2020-9-11")
+    tk.StringVar(root, name="End_date")
+    root.setvar("End_date", value="2020-9")
 
     # add menubar
     menu_bar()
@@ -1139,7 +1391,7 @@ def results_gui(df):
 
     frame_plot_info.place(
         x=scrol_width + button_width,
-        height=button_height,
+        height=button_height + 50,
         relwidth=1,
         width=-button_width - scrol_width,
     )
@@ -1231,7 +1483,7 @@ def results_gui(df):
 
 def main():
     # path to results file
-    res_path = "./results/result 2021-01-12_12-30.csv"
+    res_path = "./results/tm dec all.csv"
     # create data frame
     df = pd.read_csv(res_path, index_col="Serial_number")
     # opens gui
