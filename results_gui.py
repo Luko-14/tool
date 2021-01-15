@@ -537,7 +537,7 @@ def menu_bar():
 def draw_select_plot(frame_select_plot):
 
     # create variables
-    width = 80
+    width = 85
 
     # create plot variable
     global selected_plot
@@ -576,7 +576,7 @@ def draw_select_plot(frame_select_plot):
     ttk.Radiobutton(
         frame_select_plot,
         variable=selected_plot,
-        text="bar sequence",
+        text="bar variable term",
         value="bar filt",
         width=width,
         command=filter_data,
@@ -767,7 +767,7 @@ def plot_bar(plots):
         y_axis4,
         width=2 * width,
         color="#FFAE03",
-        label="Non-heating usage (m³)",
+        label="Non-heating gas usage (m³)",
     )
 
     # plotting the errorbars
@@ -1064,6 +1064,9 @@ def reset_filter():
         i.checkboxes["All/None"][0].set(True)
         i.check_all_items()
 
+    # reset hte graph
+    checkbox_click()
+
 
 def draw_plot():
     # set gasprice variable
@@ -1138,7 +1141,7 @@ def draw_plot():
         # create bar graph
         plots, ax1 = plot_bar_red(plots)
         # create info text
-        text = "Tool calculated gas reduction for heating."
+        text = "Projected gas reduction for heating after balancing the radiators."
 
         # update the root
         root.update()
@@ -1157,7 +1160,7 @@ def draw_plot():
         # create bar graph
         plots, ax1 = plot_bar_filter(plots)
         # create info text
-        text = "Gas consumption from {} untill {}.\nGas price per m³:€{}".format(
+        text = "Gas consumption from\n{} untill {}.\n\nGas price per m³:€{}".format(
             root.getvar(name="Begin_date"),
             root.getvar(name="End_date"),
             root.getvar(name="Gas_price"),
@@ -1192,13 +1195,19 @@ def draw_plot():
     canvas_plots.get_tk_widget().place(anchor="sw")
 
     # add toolbar
-    toolbar = NavigationToolbar2Tk(canvas_plots, frame_plots)
+    toolbar = NavigationToolbar2Tk(canvas_plots, frame_plots, pack_toolbar=False)
+    toolbar.pack(side=tk.BOTTOM, fill=tk.X, padx=70)
     toolbar.update()
-    canvas_plots.get_tk_widget().pack()
+    canvas_plots.get_tk_widget().pack(anchor="w")
 
     # creating labels
     label = ttk.Label(
-        frame_plot_info, text=text, relief=tk.SOLID, borderwidth=2, padding=3
+        frame_plot_info,
+        text=text,
+        relief=tk.SOLID,
+        borderwidth=2,
+        padding=3,
+        wraplength=200,
     )
     # add text to label frame
     label.pack(anchor="ne", pady=p)
@@ -1262,7 +1271,7 @@ def draw_buttons(df_results, frame_buttons):
         "Influence_on_heating",
         "Change_in_residents",
         "Change_in_behaviour",
-        "Av_use_data",
+        "Average_use_data",
     ]
     # column and row number
     j = 0
@@ -1289,8 +1298,18 @@ def draw_buttons(df_results, frame_buttons):
     q.configure("my3.TButton", foreground="#e0465d")
 
     ttk.Button(
-        frame_buttons, text="Reset filters", style="my3.TButton", command=reset_filter
-    ).grid(row=1, column=4, rowspan=2, sticky="NESW")
+        frame_buttons,
+        text="Reset filters",
+        style="my3.TButton",
+        command=reset_filter,
+    ).grid(
+        row=1,
+        column=4,
+        rowspan=2,
+        sticky="NESW",
+        pady=3,
+        padx=3,
+    )
 
     return button_list[0]
 
@@ -1348,7 +1367,7 @@ def results_gui(df):
     scrol_width = 200
     button_height = 120
     button_width = 750
-    select_plot_width = 145
+    select_plot_width = 155
     select_plot_height = 145
     scrol_width_window = 275
     scrollbar_width = 15

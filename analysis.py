@@ -106,7 +106,7 @@ def analyze_house(i, average_dates, comp_dates):
     df_results["Av_use"][i] = average_use[0]
     df_results["Av_use_min"][i] = average_use[1]
     df_results["Av_use_max"][i] = average_use[2]
-    df_results["Av_use_data"][i] = with_av_use
+    df_results["Average_use_data"][i] = with_av_use
 
     # get the first row  of data
     house_data = df_snr.iloc[0]
@@ -395,7 +395,7 @@ def initialise_df():
             "Av_use",
             "Av_use_min",
             "Av_use_max",
-            "Av_use_data",
+            "Average_use_data",
             "Av_old_usage",
             "Min_old_usage",
             "Max_old_usage",
