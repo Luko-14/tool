@@ -123,6 +123,7 @@ def analyze_house(i, average_dates, comp_dates):
     df_results["Influence_on_heating"][i] = df_survey["Influence_on_heating"][i]
     df_results["Change_in_residents"][i] = df_survey["Change_in_residents"][i]
     df_results["Change_in_behaviour"][i] = df_survey["Change_in_behaviour"][i]
+    df_results["Radiator_valve"][i] = df_survey["Radiator_valve"][i]
 
 
 # creating a results file
@@ -295,6 +296,7 @@ def initialise_df():
             "Invloed op verwarming": "Influence_on_heating",
             "Verandering van de grotte van huishouden": "Change_in_residents",
             "Verandering in bewoningsgedrag": "Change_in_behaviour",
+            "Verschillende radiatorkranen": "Radiator_valve",
         },
         inplace=True,
     )
@@ -314,6 +316,23 @@ def initialise_df():
         inplace=True,
     )
 
+    # fromatting radiator valves
+    df_survey["Radiator_valve"] = df_survey["Radiator_valve"].str.lower()
+
+    df_survey["Radiator_valve"] = df_survey["Radiator_valve"].str.replace("niet", "Non")
+
+    df_survey["Radiator_valve"] = df_survey["Radiator_valve"].str.replace(
+        "regelbaar", "Adjustable"
+    )
+
+    df_survey["Radiator_valve"] = df_survey["Radiator_valve"].str.replace(
+        "voetventiel", "Foot valve"
+    )
+
+    df_survey["Radiator_valve"] = df_survey["Radiator_valve"].str.replace(
+        "thermostaatknoppen", "Thermostat valve"
+    )
+
     # replacing Na with false (assumption)
     df_survey.fillna(False, inplace=True)
 
@@ -325,6 +344,7 @@ def initialise_df():
             df_results.columns[2]: "District_heating",
             df_results.columns[3]: "Underfloor_heating",
             df_results.columns[4]: "Gasmeter_type",
+            df_results.columns[5]: "Radiator_valve",
         },
         inplace=True,
     )
@@ -337,6 +357,7 @@ def initialise_df():
             "District_heating",
             "Underfloor_heating",
             "Gasmeter_type",
+            "Radiator_valve",
         ]
     ]
 
@@ -405,6 +426,7 @@ def initialise_df():
             "Av_gas_reduction",
             "Min_gas_reduction",
             "Max_gas_reduction",
+            "Radiator_valve",
         ]
     ] = None
 
@@ -561,7 +583,7 @@ def create_analysis():
             )
             return None
 
-        # make sure the file name is suitable
+        # list of unsuitable characters
         not_suitable_ls = ["/", "\\", ":", "*", "?", '"', "<", ">", "|"]
 
         # check if any item is in list

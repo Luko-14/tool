@@ -1272,6 +1272,7 @@ def draw_buttons(df_results, frame_buttons):
         "Change_in_residents",
         "Change_in_behaviour",
         "Average_use_data",
+        "Radiator_valve",
     ]
     # column and row number
     j = 0
@@ -1303,9 +1304,8 @@ def draw_buttons(df_results, frame_buttons):
         style="my3.TButton",
         command=reset_filter,
     ).grid(
-        row=1,
+        row=2,
         column=4,
-        rowspan=2,
         sticky="NESW",
         pady=3,
         padx=3,
@@ -1502,7 +1502,7 @@ def results_gui(df):
 
 def main():
     # path to results file
-    res_path = "./results/tm dec all.csv"
+    res_path = "./results/result 2021-01-28_14-01.csv"
     # create data frame
     df = pd.read_csv(res_path, index_col="Serial_number")
     # opens gui
