@@ -319,10 +319,12 @@ def initialise_df():
     # fromatting radiator valves
     df_survey["Radiator_valve"] = df_survey["Radiator_valve"].str.lower()
 
-    df_survey["Radiator_valve"] = df_survey["Radiator_valve"].str.replace("niet", "Non")
+    df_survey["Radiator_valve"] = df_survey["Radiator_valve"].str.replace(
+        "Statische niet-regelbare kraan", "Non adjustable valve"
+    )
 
     df_survey["Radiator_valve"] = df_survey["Radiator_valve"].str.replace(
-        "regelbaar", "Adjustable"
+        "statische regelbare kraan", "Adjustable valve"
     )
 
     df_survey["Radiator_valve"] = df_survey["Radiator_valve"].str.replace(
@@ -330,7 +332,7 @@ def initialise_df():
     )
 
     df_survey["Radiator_valve"] = df_survey["Radiator_valve"].str.replace(
-        "thermostaatknoppen", "Thermostat valve"
+        "thermostaatkraan", "Thermostat valve"
     )
 
     # replacing Na with false (assumption)
