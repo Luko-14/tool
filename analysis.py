@@ -285,6 +285,7 @@ def initialise_df():
             "Invloed op verwarming",
             "Verandering van de grotte van huishouden",
             "Verandering in bewoningsgedrag",
+            "Type Radiatorkraan",
         ]
     ]
 
@@ -296,7 +297,7 @@ def initialise_df():
             "Invloed op verwarming": "Influence_on_heating",
             "Verandering van de grotte van huishouden": "Change_in_residents",
             "Verandering in bewoningsgedrag": "Change_in_behaviour",
-            "Verschillende radiatorkranen": "Radiator_valve",
+            "Type Radiatorkraan": "Radiator_valve",
         },
         inplace=True,
     )
@@ -320,7 +321,7 @@ def initialise_df():
     df_survey["Radiator_valve"] = df_survey["Radiator_valve"].str.lower()
 
     df_survey["Radiator_valve"] = df_survey["Radiator_valve"].str.replace(
-        "Statische niet-regelbare kraan", "Non adjustable valve"
+        "statische niet-regelbare kraan", "Non adjustable valve"
     )
 
     df_survey["Radiator_valve"] = df_survey["Radiator_valve"].str.replace(
