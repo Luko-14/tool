@@ -321,11 +321,11 @@ def initialise_df():
     df_survey["Radiator_valve"] = df_survey["Radiator_valve"].str.lower()
 
     df_survey["Radiator_valve"] = df_survey["Radiator_valve"].str.replace(
-        "statische niet-regelbare kraan", "Non adjustable valve"
+        "statische niet-regelbare kraan", "Static non-adj. valve"
     )
 
     df_survey["Radiator_valve"] = df_survey["Radiator_valve"].str.replace(
-        "statische regelbare kraan", "Adjustable valve"
+        "statische regelbare kraan", "Static adj. valve"
     )
 
     df_survey["Radiator_valve"] = df_survey["Radiator_valve"].str.replace(
